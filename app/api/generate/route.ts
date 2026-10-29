@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   }
   // Serve cached guides instantly unless forced. Cache hits are free: no rate limit, no API key needed.
   if (!force) {
-    const existing = await getGuide(slugify(query));
+    const existing = await getGuide(slugify(query), { rebuildInDemo: false });
     if (existing) {
       return new Response(JSON.stringify({ cached: true, slug: existing.guide.slug, tier: existing.tier }), {
         headers: { "content-type": "application/json" }

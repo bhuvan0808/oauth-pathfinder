@@ -86,14 +86,19 @@ async function cache(): Promise<Cache> {
   return (await getRedisCache()) ?? memoryCache;
 }
 
-export async function getGuide(slug: string): Promise<{ guide: Guide; tier: "library" | "live" } | null> {
+/**
+ * Look up a guide. `rebuildInDemo` (default true) lets demo mode rebuild a missing live guide so deep links work
+ * across serverless instances; the generate route passes false so a fresh request still streams the full run.
+ */
+export async function getGuide(slug: string, opts: { rebuildInDemo?: boolean } = {}): Promise<{ guide: Guide; tier: "library" | "live" } | null> {
+  const rebuildInDemo = opts.rebuildInDemo ?? true;
   const curated = loadLibrary().find((g) => g.slug === slug);
   if (curated) return { guide: curated, tier: "library" };
   const live = await (await cache()).get(slug);
   if (live) return { guide: live, tier: "live" };
   // Demo mode: the in-memory cache does not survive a serverless cold start or a different instance, and
   // fixture guides are deterministic, so rebuild the guide silently (no fixture delays; probes still run).
-  if (process.env.MOCK_AGENT === "1" && /^[a-z0-9-]+$/.test(slug)) {
+  if (rebuildInDemo && process.env.MOCK_AGENT === "1" && /^[a-z0-9-]+$/.test(slug)) {
     try {
       const [{ generateGuide }, { withoutMockDelays }] = await Promise.all([import("./agent/pipeline"), import("./agent/mock")]);
       const { guide } = await withoutMockDelays(() => generateGuide(slug.replace(/-/g, " "), () => {}));
