@@ -90,7 +90,22 @@ export async function getGuide(slug: string): Promise<{ guide: Guide; tier: "lib
   const curated = loadLibrary().find((g) => g.slug === slug);
   if (curated) return { guide: curated, tier: "library" };
   const live = await (await cache()).get(slug);
-  return live ? { guide: live, tier: "live" } : null;
+  if (live) return { guide: live, tier: "live" };
+  // Demo mode: the in-memory cache does not survive a serverless cold start or a different instance, and
+  // fixture guides are deterministic, so rebuild the guide silently (no fixture delays; probes still run).
+  if (process.env.MOCK_AGENT === "1" && /^[a-z0-9-]+$/.test(slug)) {
+    try {
+      const [{ generateGuide }, { withoutMockDelays }] = await Promise.all([import("./agent/pipeline"), import("./agent/mock")]);
+      const { guide } = await withoutMockDelays(() => generateGuide(slug.replace(/-/g, " "), () => {}));
+      if (guide.slug !== slug) return null;
+      await saveGeneratedGuide(guide);
+      return { guide, tier: "live" };
+    } catch (e) {
+      console.error(`Demo-mode rebuild failed for ${slug}:`, (e as Error).message);
+      return null;
+    }
+  }
+  return null;
 }
 
 export async function saveGeneratedGuide(guide: Guide): Promise<void> {

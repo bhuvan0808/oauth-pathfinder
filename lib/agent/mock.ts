@@ -45,7 +45,20 @@ type Fixture = {
   draft: (ctx: { now: string; slug: string; retry: boolean }) => any;
 };
 
-const delay = (ms: number) => new Promise((r) => setTimeout(r, ms));
+// Fixture delays make the live log feel real. When a guide is rebuilt silently (cache miss on a fresh
+// serverless instance) they are skipped so the page still loads in a couple of seconds.
+let fastDepth = 0;
+const delay = (ms: number) => (fastDepth > 0 ? Promise.resolve() : new Promise((r) => setTimeout(r, ms)));
+
+/** Run fn with all fixture delays disabled. */
+export async function withoutMockDelays<T>(fn: () => Promise<T>): Promise<T> {
+  fastDepth++;
+  try {
+    return await fn();
+  } finally {
+    fastDepth--;
+  }
+}
 const ev = (level: Ev["level"], sourceIds: string[] = [], note?: string): Ev => ({ level, sourceIds, ...(note ? { note } : {}) });
 const src = (id: string, url: string, title: string, type: "official" | "community" = "official") => ({ id, url, title, type });
 

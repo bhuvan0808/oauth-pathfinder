@@ -11,3 +11,5 @@ next-env.d.ts
 # agent-generated candidates are reviewed locally, not committed
 data/candidates/*.json
 data/candidates/*.audit.txt
+
+.vercel
