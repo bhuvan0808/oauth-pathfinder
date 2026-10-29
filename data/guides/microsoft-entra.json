@@ -1,0 +1,167 @@
+{
+  "schemaVersion": 1,
+  "slug": "microsoft-entra",
+  "app": {
+    "name": "Microsoft 365 (Entra ID, Graph)",
+    "website": "https://learn.microsoft.com/entra/identity-platform/",
+    "docsUrl": "https://learn.microsoft.com/entra/identity-platform/quickstart-register-app",
+    "developerPortalUrl": "https://entra.microsoft.com/",
+    "category": "Email, Calendar, Files, Identity",
+    "oneLiner": "Outlook, Calendar, OneDrive, Teams and SharePoint all sit behind one app registration in Microsoft Entra ID. The gate is publisher verification, which needs a Partner Center account."
+  },
+  "generatedBy": "curated",
+  "generatedAt": "2026-10-28T00:00:00Z",
+  "lastVerifiedAt": "2026-10-28T00:00:00Z",
+  "oauth": {
+    "supportsOAuth": true,
+    "flows": ["authorization_code", "pkce", "client_credentials", "device_code", "on_behalf_of"],
+    "alternatives": [],
+    "composioManaged": "unknown",
+    "composioToolkitSlug": "outlook",
+    "dynamicClientRegistration": "no",
+    "notes": "Permissions are delegated (user context) or application (daemon). Many delegated permissions still need admin consent in customer tenants."
+  },
+  "summary": {
+    "difficulty": 4,
+    "difficultyReason": "Registration is minutes and free. But new multi-tenant apps from unverified publishers show 'unverified' and, in many organisations, users cannot consent at all. Removing that requires publisher verification, which depends on a Partner Center (MPN) account with a vetted company identity and a verified domain.",
+    "timeToDevReady": { "min": 15, "max": 30, "unit": "minutes", "confidence": "high" },
+    "timeToProduction": { "min": 1, "max": 3, "unit": "weeks", "confidence": "medium", "note": "If you already have a Partner Center account with a vetted company and a verified domain, verification is minutes. Setting those up from scratch (company vetting, domain verification, MPN ID) is what takes days to weeks." },
+    "cost": "Free. Microsoft does not charge for publisher verification; a Partner Center account is also free to create.",
+    "blockers": [
+      { "text": "Publisher verification requires a Microsoft Partner Network (Partner Center) account whose company identity has been vetted, associated with the tenant where the app is registered.", "severity": "hard", "evidence": { "level": "documented", "sourceIds": ["s1", "s2", "s5"] } },
+      { "text": "Multi-tenant apps registered after Nov 2020 from unverified publishers show 'unverified', and where risk-based step-up consent is enabled users cannot consent; an admin must.", "severity": "hard", "evidence": { "level": "documented", "sourceIds": ["s3", "s4"] } },
+      { "text": "The app's publisher domain must be a domain verified in the tenant; .onmicrosoft.com domains show as unverified.", "severity": "soft", "evidence": { "level": "documented", "sourceIds": ["s3"] } },
+      { "text": "Azure AD B2C / External ID tenants do not support publisher verification; register the app in a standard workforce tenant.", "severity": "soft", "evidence": { "level": "documented", "sourceIds": ["s6"] } }
+    ],
+    "tldr": "Register a multi-tenant app in Entra, add Graph permissions and a redirect URI, and you can sign in your own tenant in half an hour. For other organisations' users to consent cleanly you need the blue 'verified' badge: a Partner Center account with a vetted company, a verified domain set as publisher domain, then one click in the app's Branding page. Budget the time for Partner Center, not for Microsoft's review."
+  },
+  "prerequisites": [
+    { "text": "A Microsoft Entra tenant you can register apps in (a free Microsoft 365 developer tenant or your company tenant).", "owner": "you", "evidence": { "level": "documented", "sourceIds": ["s7"] } },
+    { "text": "A custom domain verified in that tenant (Entra ID > Custom domain names). Needed as the publisher domain.", "owner": "you", "evidence": { "level": "documented", "sourceIds": ["s3", "s5"] } },
+    { "text": "A Partner Center account with completed company vetting, and its global MPN ID. Start this first; it is the long pole.", "owner": "you", "evidence": { "level": "documented", "sourceIds": ["s1", "s2", "s5"] } },
+    { "text": "Decide single-tenant vs multi-tenant and which Graph permissions you need; minimum delegated permissions reduce admin-consent friction.", "owner": "agent", "evidence": { "level": "documented", "sourceIds": ["s7"] } }
+  ],
+  "paths": {
+    "dev": [
+      {
+        "title": "Register the application",
+        "detail": "Entra admin center, App registrations, New registration. Choose the supported account types (multi-tenant for a product used by other organisations) and add a web redirect URI.",
+        "owner": "you",
+        "effort": "5 min",
+        "consoleLocation": "Entra admin center > Entra ID > App registrations > New registration",
+        "values": [
+          { "field": "Supported account types", "value": "Accounts in any organizational directory (multi-tenant); add personal accounts if consumers need to sign in" },
+          { "field": "Redirect URI (Web)", "value": "https://YOUR_DOMAIN/oauth/callback/microsoft" }
+        ],
+        "evidence": { "level": "documented", "sourceIds": ["s7"] }
+      },
+      {
+        "title": "Add a client secret (or certificate)",
+        "detail": "Certificates & secrets. Secrets expire (max 24 months); note the expiry in your ops calendar.",
+        "owner": "you",
+        "effort": "2 min",
+        "consoleLocation": "Certificates & secrets > New client secret",
+        "evidence": { "level": "documented", "sourceIds": ["s7"] }
+      },
+      {
+        "title": "Add Microsoft Graph permissions",
+        "detail": "API permissions, Microsoft Graph, Delegated. Pick the narrowest: Mail.Read over Mail.ReadWrite, Calendars.Read, Files.Read, User.Read for identity, offline_access for refresh tokens.",
+        "owner": "agent",
+        "effort": "10 min",
+        "consoleLocation": "API permissions > Add a permission > Microsoft Graph > Delegated permissions",
+        "values": [
+          { "field": "Identity", "value": "openid profile email User.Read offline_access" },
+          { "field": "Mail read", "value": "Mail.Read" },
+          { "field": "Calendar", "value": "Calendars.ReadWrite" }
+        ],
+        "evidence": { "level": "documented", "sourceIds": ["s7"] }
+      },
+      {
+        "title": "Sign in from your own tenant",
+        "detail": "Use the /common or /organizations authority for multi-tenant apps. Grant admin consent in your own tenant from the API permissions page to skip prompts while developing.",
+        "owner": "agent",
+        "effort": "15 min",
+        "evidence": { "level": "documented", "sourceIds": ["s7"] }
+      }
+    ],
+    "production": [
+      {
+        "title": "Verify a custom domain in the tenant and set it as publisher domain",
+        "detail": "Add and verify the domain under Custom domain names (DNS TXT record), then in the app's Branding & properties set Publisher domain to it. Verification can also be done by hosting a microsoft-identity-association.json file.",
+        "owner": "you",
+        "effort": "30 min + DNS propagation",
+        "consoleLocation": "Entra ID > Custom domain names; App registration > Branding & properties > Publisher domain",
+        "evidence": { "level": "documented", "sourceIds": ["s3"] }
+      },
+      {
+        "title": "Create a Partner Center account and complete company vetting",
+        "detail": "Enroll at Partner Center (Microsoft AI Cloud Partner Program), complete legal business and employment verification, and note the global (not location) MPN/Partner ID. Associate your Entra tenant with the Partner account.",
+        "owner": "you",
+        "effort": "days to 2 weeks (vetting)",
+        "evidence": { "level": "documented", "sourceIds": ["s1", "s2", "s5"] }
+      },
+      {
+        "title": "Mark the app as publisher verified",
+        "detail": "Branding & properties, Publisher verification, enter the global MPN ID, Verify and save. The account doing this needs Application Administrator or Global Administrator in the tenant. Once it succeeds the consent prompt shows the blue verified badge.",
+        "owner": "you",
+        "effort": "5 min",
+        "consoleLocation": "App registration > Branding & properties > Publisher verification",
+        "evidence": { "level": "documented", "sourceIds": ["s3", "s5"] }
+      },
+      {
+        "title": "Plan for admin consent anyway",
+        "detail": "Even verified apps requesting non-basic permissions often need a tenant admin to consent. Provide an admin-consent URL (https://login.microsoftonline.com/{tenant}/adminconsent?client_id=...) and a one-page explanation of each permission for customers' IT.",
+        "owner": "agent",
+        "effort": "1 hour",
+        "evidence": { "level": "documented", "sourceIds": ["s4"] }
+      },
+      {
+        "title": "Optional: Microsoft 365 App Certification",
+        "detail": "A separate, heavier program that further distinguishes apps for Microsoft 365 customers. Not required for consent.",
+        "owner": "you",
+        "effort": "weeks",
+        "evidence": { "level": "documented", "sourceIds": ["s4"] }
+      }
+    ]
+  },
+  "requirements": [
+    { "item": "Verified custom domain in the tenant", "required": true, "evidence": { "level": "documented", "sourceIds": ["s3"] } },
+    { "item": "Partner Center account with vetted company identity", "required": true, "evidence": { "level": "documented", "sourceIds": ["s1", "s2"] } },
+    { "item": "Global MPN / Partner ID associated with the tenant", "required": true, "evidence": { "level": "documented", "sourceIds": ["s5"] } },
+    { "item": "Publisher domain set on the app registration", "required": true, "evidence": { "level": "documented", "sourceIds": ["s3"] } },
+    { "item": "Privacy statement and terms of service URLs on the app", "required": false, "notes": "Shown on the consent prompt; expected by customers' admins.", "evidence": { "level": "inferred", "sourceIds": [], "note": "fields exist in Branding & properties; whether they are required for verification was not confirmed" } },
+    { "item": "Microsoft 365 App Certification", "required": false, "evidence": { "level": "documented", "sourceIds": ["s4"] } }
+  ],
+  "gotchas": [
+    { "title": "'Verified' badge but still 'unverified' elsewhere", "detail": "The consent prompt and the user's app-consent management page use different logic; publisher domain and tenant-verified domains must both be set for a consistent result.", "evidence": { "level": "documented", "sourceIds": ["s8"] } },
+    { "title": "Location MPN ID vs global", "detail": "Partner accounts have location-specific IDs; publisher verification needs the global Partner ID or it fails with MPNAccountNotFound.", "evidence": { "level": "reported", "sourceIds": ["s5"] } },
+    { "title": "B2C and External ID tenants", "detail": "Apps registered in Azure AD B2C tenants cannot be publisher verified; register in a workforce tenant.", "evidence": { "level": "documented", "sourceIds": ["s6"] } },
+    { "title": "Secret expiry", "detail": "Client secrets expire; a lapsed secret looks like a sudden auth outage for every customer.", "evidence": { "level": "inferred", "sourceIds": [], "note": "standard Entra behaviour; expiry limits not re-checked" } }
+  ],
+  "whenStuck": [
+    { "situation": "Publisher verification fails with an MPN error", "action": "Use the global Partner ID, confirm the tenant is associated with the Partner account in Partner Center, and run the verification as Application Administrator.", "link": "https://learn.microsoft.com/en-us/entra/identity-platform/troubleshoot-publisher-verification", "evidence": { "level": "reported", "sourceIds": ["s5", "s6"] } },
+    { "situation": "Customers' users see 'need admin approval'", "action": "Send the admin-consent URL and a permission explanation; ask the admin to grant tenant-wide consent.", "evidence": { "level": "documented", "sourceIds": ["s4"] } }
+  ],
+  "sources": [
+    { "id": "s1", "url": "https://learn.microsoft.com/is-is/entra/external-id/default-account", "title": "Microsoft Learn: new registrations show unverified unless publisher domain and MPN identity are verified", "type": "official", "fetchedAt": "2026-10-28" },
+    { "id": "s2", "url": "https://learn.microsoft.com/en-us/answers/questions/1273263/how-to-get-a-verified-publisher-for-my-app", "title": "Microsoft Q&A: verification is completed through the Partner Program with an MPN account", "type": "official", "fetchedAt": "2026-10-28" },
+    { "id": "s3", "url": "https://learn.microsoft.com/en-us/entra/identity-platform/howto-configure-publisher-domain", "title": "Microsoft Learn: Configure an app's publisher domain", "type": "official", "fetchedAt": "2026-10-28" },
+    { "id": "s4", "url": "https://techcommunity.microsoft.com/blog/microsoft-entra-blog/publisher-verification-and-app-consent-policies-are-now-generally-available/1257374", "title": "Microsoft Entra blog: publisher verification GA; users cannot consent to new unverified multi-tenant apps", "type": "official", "fetchedAt": "2026-10-28" },
+    { "id": "s5", "url": "https://portfolio-dxn.pages.dev/blog/publisherverification", "title": "Practitioner write-up: publisher verification mechanics, global MPN ID, error codes", "type": "community", "fetchedAt": "2026-10-28" },
+    { "id": "s6", "url": "https://learn.microsoft.com/en-us/answers/questions/2183422/how-to-get-the-app-verified", "title": "Microsoft Q&A: B2C tenants do not support publisher verification", "type": "official", "fetchedAt": "2026-10-28" },
+    { "id": "s7", "url": "https://learn.microsoft.com/entra/identity-platform/quickstart-register-app", "title": "Microsoft Learn: Quickstart, register an application", "type": "official" },
+    { "id": "s8", "url": "https://learn.microsoft.com/en-us/answers/questions/519137/publisher-verification-successful-still-unverified", "title": "Microsoft Q&A: verified badge on consent but unverified on consent-management page", "type": "official", "fetchedAt": "2026-10-28" },
+    { "id": "s9", "url": "https://developer.nylas.com/docs/provider-guides/microsoft/verification-guide.md", "title": "Nylas: Microsoft publisher verification guide (free, minutes if requirements met)", "type": "community", "fetchedAt": "2026-10-28" }
+  ],
+  "verification": {
+    "status": "human-verified",
+    "checkedClaims": 24,
+    "corrected": ["Draft listed 'Microsoft review wait' as the production delay; sources show there is no review queue. The delay is Partner Center company vetting and domain verification, so the production clock and step list were rewritten around those."],
+    "unverifiable": ["Partner Center vetting duration (no official figure; practitioners describe days to weeks)", "Whether privacy/terms URLs are mandatory for verification"],
+    "notes": "Microsoft's own pages confirm the unverified behaviour, publisher-domain rules, MPN requirement and B2C exclusion. The Quickstart (s7) is cited from memory as a stable page."
+  },
+  "openQuestions": [
+    "Exact current Partner Center enrolment steps and vetting time; Microsoft renamed the program (MPN to AI Cloud Partner Program) and the flow changes.",
+    "Which Graph permissions currently require admin consent by default in a typical tenant; this is tenant-policy dependent."
+  ]
+}

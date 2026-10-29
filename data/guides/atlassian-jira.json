@@ -1,0 +1,155 @@
+{
+  "schemaVersion": 1,
+  "slug": "atlassian-jira",
+  "app": {
+    "name": "Atlassian (Jira, Confluence)",
+    "website": "https://www.atlassian.com",
+    "docsUrl": "https://developer.atlassian.com/cloud/oauth/getting-started/",
+    "developerPortalUrl": "https://developer.atlassian.com/console/myapps/",
+    "category": "Project management, Documentation",
+    "oneLiner": "Jira and Confluence Cloud use one OAuth 2.0 model, called 3LO, registered in the Atlassian Developer Console. Private by default, shareable by a toggle, reviewed only for the Marketplace."
+  },
+  "generatedBy": "curated",
+  "generatedAt": "2026-10-28T00:00:00Z",
+  "lastVerifiedAt": "2026-10-28T00:00:00Z",
+  "oauth": {
+    "supportsOAuth": true,
+    "flows": ["authorization_code"],
+    "alternatives": ["api_token_basic_auth", "forge_app"],
+    "composioManaged": "unknown",
+    "composioToolkitSlug": "jira",
+    "dynamicClientRegistration": "unknown",
+    "notes": "Atlassian calls collecting end-user API tokens, or asking each customer to create their own 3LO app, non-compliant with its security requirements. Build one distributable 3LO app."
+  },
+  "summary": {
+    "difficulty": 3,
+    "difficultyReason": "Creating and sharing the app takes under an hour and needs no review. The catch: until Atlassian has reviewed the app (a Marketplace process), users see a warning that it has not been reviewed.",
+    "timeToDevReady": { "min": 15, "max": 30, "unit": "minutes", "confidence": "high" },
+    "timeToProduction": { "min": 1, "max": 2, "unit": "hours", "confidence": "medium", "note": "Sharing with a privacy policy URL is enough for any user to install, with an 'unreviewed' warning. Removing the warning means a Marketplace listing; its review time is not documented here." },
+    "cost": "Free to create and share. Marketplace listing has its own program requirements.",
+    "blockers": [
+      { "text": "Installers of an app Atlassian has not reviewed are warned that it has not been reviewed. Only a Marketplace review removes this.", "severity": "soft", "evidence": { "level": "documented", "sourceIds": ["s1"] } }
+    ],
+    "tldr": "Register an OAuth 2.0 (3LO) integration in the Developer Console, add one callback URL, pick scopes, then flip Distribution to Sharing with a vendor name and privacy policy URL. Any Atlassian user can then install it, with an 'unreviewed app' warning until you go through Marketplace review."
+  },
+  "prerequisites": [
+    { "text": "An Atlassian account. No separate developer-program enrolment is needed for a 3LO integration.", "owner": "you", "evidence": { "level": "documented", "sourceIds": ["s1", "s4"] } },
+    { "text": "A public privacy policy URL. Required the moment you enable sharing.", "owner": "agent", "evidence": { "level": "documented", "sourceIds": ["s2", "s3"] } },
+    { "text": "A Jira or Confluence Cloud site to test against (free plans work).", "owner": "you", "evidence": { "level": "inferred", "sourceIds": [], "note": "standard practice; not stated as a requirement in the console docs" } }
+  ],
+  "paths": {
+    "dev": [
+      {
+        "title": "Open the Developer Console",
+        "detail": "From any developer.atlassian.com page, profile icon, then Developer console. Your 3LO apps are listed with a 3LO lozenge.",
+        "owner": "you",
+        "effort": "2 min",
+        "consoleLocation": "developer.atlassian.com > profile icon > Developer console",
+        "evidence": { "level": "documented", "sourceIds": ["s1"] }
+      },
+      {
+        "title": "Create an OAuth 2.0 integration",
+        "detail": "Create, then OAuth 2.0 integration. Enter the app name and accept the developer terms. The app is private by default: only you can install it.",
+        "owner": "you",
+        "effort": "3 min",
+        "consoleLocation": "My apps > Create > OAuth 2.0 integration",
+        "values": [{ "field": "Name", "value": "YOUR_PRODUCT" }],
+        "evidence": { "level": "documented", "sourceIds": ["s1", "s3"] }
+      },
+      {
+        "title": "Add the 3LO callback URL",
+        "detail": "Authorization, then next to OAuth 2.0 (3LO) click Add and enter your callback URL. One callback URL per app; use separate apps for local and production environments.",
+        "owner": "agent",
+        "effort": "3 min",
+        "consoleLocation": "Authorization > OAuth 2.0 (3LO) > Add / Configure",
+        "values": [{ "field": "Callback URL", "value": "https://YOUR_DOMAIN/oauth/callback/atlassian" }],
+        "evidence": { "level": "documented", "sourceIds": ["s2", "s4"] }
+      },
+      {
+        "title": "Add the Jira (or Confluence) API and pick scopes",
+        "detail": "Permissions, add the Jira API, Edit Scopes, select the minimum. Add the API before editing scopes, and set Authorization first or scope edits may not stick. Include offline_access in your authorize request if you need refresh tokens.",
+        "owner": "agent",
+        "effort": "5 min",
+        "consoleLocation": "Permissions > Jira API > Add > Edit Scopes",
+        "values": [
+          { "field": "Typical read scopes", "value": "read:jira-work read:jira-user" },
+          { "field": "Write", "value": "write:jira-work" },
+          { "field": "Refresh tokens", "value": "add offline_access to the authorize URL scope list" }
+        ],
+        "evidence": { "level": "documented", "sourceIds": ["s3", "s2"] }
+      },
+      {
+        "title": "Copy client ID and secret",
+        "detail": "Settings in the left menu shows both. Put them into your integration or your Composio custom auth config.",
+        "owner": "you",
+        "effort": "1 min",
+        "consoleLocation": "Settings",
+        "evidence": { "level": "documented", "sourceIds": ["s3"] }
+      },
+      {
+        "title": "Authorize against your own site",
+        "detail": "Run the authorization URL from the Authorization page. The user picks which site to grant at consent; tokens are site-scoped, so you call the API via api.atlassian.com/ex/jira/{cloudid}/… after looking up accessible resources.",
+        "owner": "agent",
+        "effort": "15 min",
+        "evidence": { "level": "documented", "sourceIds": ["s4"] }
+      }
+    ],
+    "production": [
+      {
+        "title": "Enable sharing",
+        "detail": "Distribution, Edit, choose Sharing. You must enter at least a vendor name and a privacy policy URL, and select a personal data declaration. Users can now install from the authorization link.",
+        "owner": "you",
+        "effort": "10 min",
+        "consoleLocation": "Distribution > Edit > Sharing",
+        "values": [
+          { "field": "Vendor name", "value": "YOUR_COMPANY" },
+          { "field": "Privacy policy URL", "value": "https://YOUR_DOMAIN/privacy" },
+          { "field": "Personal data declaration", "value": "choose the option that matches whether you store Atlassian personal data" }
+        ],
+        "evidence": { "level": "documented", "sourceIds": ["s1", "s3"] }
+      },
+      {
+        "title": "Decide whether to pursue a Marketplace listing",
+        "detail": "Shared-but-unreviewed apps show a 'not yet reviewed by Atlassian' warning at install. A Marketplace listing adds security requirements and a review. For an internal tool or a private beta, sharing is enough.",
+        "owner": "either",
+        "effort": "days to weeks if you list",
+        "evidence": { "level": "documented", "sourceIds": ["s1"], "note": "listing requirements and timing are outside the pages checked for this guide" }
+      }
+    ]
+  },
+  "requirements": [
+    { "item": "Privacy policy URL", "required": true, "notes": "Required to enable sharing.", "evidence": { "level": "documented", "sourceIds": ["s2", "s3"] } },
+    { "item": "Vendor name", "required": true, "evidence": { "level": "documented", "sourceIds": ["s3"] } },
+    { "item": "Personal data declaration", "required": true, "evidence": { "level": "documented", "sourceIds": ["s3"] } },
+    { "item": "Single callback URL", "required": true, "evidence": { "level": "documented", "sourceIds": ["s4"] } },
+    { "item": "Marketplace listing (and its security requirements)", "required": false, "notes": "Only to remove the unreviewed warning and be discoverable.", "evidence": { "level": "documented", "sourceIds": ["s1"] } }
+  ],
+  "gotchas": [
+    { "title": "Site-scoped tokens", "detail": "Access tokens apply to the site the user selected at consent. Call GET https://api.atlassian.com/oauth/token/accessible-resources to find cloud IDs, then route requests through api.atlassian.com/ex/jira/{cloudid}.", "evidence": { "level": "documented", "sourceIds": ["s4"] } },
+    { "title": "Do not collect API tokens from end users", "detail": "Atlassian names collecting customer API tokens, or instructing each customer to create their own 3LO app, as non-compliant with its security requirements and acceptable use policy.", "evidence": { "level": "documented", "sourceIds": ["s4"] } },
+    { "title": "Order of operations in the console", "detail": "Set Authorization (callback URL) before editing scopes, and add the API before Edit Scopes appears; integrators report scope edits failing otherwise.", "evidence": { "level": "reported", "sourceIds": ["s3"] } },
+    { "title": "You cannot delete an installed app", "detail": "Uninstall it from every site before deleting the app in Settings.", "evidence": { "level": "documented", "sourceIds": ["s1"] } }
+  ],
+  "whenStuck": [
+    { "situation": "Callback URL rejected as invalid", "action": "Use an absolute https URL with no wildcard; for local development use a tunnel URL rather than http://localhost.", "evidence": { "level": "reported", "sourceIds": ["s5"] } },
+    { "situation": "Users ask why they see a warning at install", "action": "Explain the app is shared but not Marketplace-reviewed; if the warning blocks adoption, start the Marketplace listing process.", "link": "https://developer.atlassian.com/cloud/oauth/getting-started/managing-oauth-apps/", "evidence": { "level": "documented", "sourceIds": ["s1"] } }
+  ],
+  "sources": [
+    { "id": "s1", "url": "https://developer.atlassian.com/cloud/oauth/getting-started/managing-oauth-apps/", "title": "Atlassian: Managing your OAuth 2.0 (3LO) apps", "type": "official", "fetchedAt": "2026-10-28" },
+    { "id": "s2", "url": "https://nango.dev/docs/api-integrations/jira/how-to-register-your-own-jira-api-oauth-app.md", "title": "Nango: How to register your own Jira OAuth app", "type": "community", "fetchedAt": "2026-10-28" },
+    { "id": "s3", "url": "https://docs.stackone.com/integration-guides/ticketing/jira", "title": "StackOne: Jira integration guide (console walkthrough)", "type": "community", "fetchedAt": "2026-10-28" },
+    { "id": "s4", "url": "https://docs.unified.to/skills/atlassian-cloud-oauth/SKILL.md", "title": "Unified.to: Atlassian Developer Console shared 3LO mechanics", "type": "community", "fetchedAt": "2026-10-28" },
+    { "id": "s5", "url": "https://docs.sonarsource.com/sonarqube-server/2026.3/instance-administration/integrations/jira-cloud", "title": "SonarSource: Connecting to Jira Cloud (includes invalid-callback troubleshooting)", "type": "community", "fetchedAt": "2026-10-28" }
+  ],
+  "verification": {
+    "status": "human-verified",
+    "checkedClaims": 20,
+    "corrected": ["Initial draft assumed sharing needed only a toggle; StackOne and Nango walkthroughs show the console requires vendor name, privacy policy URL and a personal data declaration, so those were added as hard requirements."],
+    "unverifiable": ["Marketplace review duration", "Whether Atlassian serves OAuth discovery metadata (probe not run; auth.atlassian.com is the authorization server, not www.atlassian.com)"],
+    "notes": "The official console page confirms private-by-default, sharing, and the unreviewed warning. Field names come from three independent integrator walkthroughs that agree with each other."
+  },
+  "openQuestions": [
+    "Marketplace listing review time and whether a security self-assessment is required for 3LO apps (as opposed to Forge/Connect) was not checked.",
+    "Rotating refresh token behaviour: Atlassian has changed this before; confirm current expiry in the 3LO docs before relying on long-lived refresh tokens."
+  ]
+}

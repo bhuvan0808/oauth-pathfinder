@@ -1,0 +1,149 @@
+{
+  "schemaVersion": 1,
+  "slug": "slack",
+  "app": {
+    "name": "Slack",
+    "website": "https://slack.com",
+    "docsUrl": "https://docs.slack.dev/",
+    "developerPortalUrl": "https://api.slack.com/apps",
+    "category": "Team chat",
+    "oneLiner": "Slack apps start in one workspace. Public distribution is a switch; the Slack Marketplace is a review."
+  },
+  "generatedBy": "curated",
+  "generatedAt": "2026-10-28T00:00:00Z",
+  "lastVerifiedAt": "2026-10-28T00:00:00Z",
+  "oauth": {
+    "supportsOAuth": true,
+    "flows": ["authorization_code"],
+    "alternatives": ["bot_token_single_workspace"],
+    "composioManaged": "unknown",
+    "composioToolkitSlug": "slack",
+    "dynamicClientRegistration": "unknown",
+    "notes": "OAuth v2 with bot scopes and optional user scopes. Token rotation is opt-in per app."
+  },
+  "summary": {
+    "difficulty": 3,
+    "difficultyReason": "Unlisted public distribution needs no review and takes an hour. But Slack's developer policy says apps distributed commercially at scale should go through Marketplace review, and that review is reported to take weeks to months.",
+    "timeToDevReady": { "min": 15, "max": 30, "unit": "minutes", "confidence": "high" },
+    "timeToProduction": { "min": 2, "max": 16, "unit": "weeks", "confidence": "low", "note": "Unlisted distribution: ~1-2 hours once you have HTTPS endpoints. Marketplace listing, which Slack's policy expects for commercial distribution at scale: reported from a few weeks to four months, and resubmission resets your place in the queue." },
+    "cost": "Free. Marketplace listing requires a public support page and professional support expectations.",
+    "blockers": [
+      { "text": "Commercial distribution at scale is expected to go through Slack Marketplace review per the developer policy update of Dec 2024 and the May 2025 terms update.", "severity": "hard", "evidence": { "level": "documented", "sourceIds": ["s4", "s5"] } },
+      { "text": "Marketplace review is manual, happens in stages, and each resubmission resets your queue position.", "severity": "soft", "evidence": { "level": "documented", "sourceIds": ["s3"] } }
+    ],
+    "tldr": "Create the app at api.slack.com/apps, add scopes and an HTTPS redirect URL, install it to your workspace, and you have tokens in half an hour. Flipping Activate Public Distribution lets any workspace install it with no review. If you will sell it or distribute at scale, Slack's policy routes you through Marketplace review, which developers report taking weeks to months."
+  },
+  "prerequisites": [
+    { "text": "A Slack workspace where you can install apps (create a free one for development).", "owner": "you", "evidence": { "level": "documented", "sourceIds": ["s1"] } },
+    { "text": "HTTPS for your OAuth redirect URL and any event/interactivity endpoints. Apps installable by other workspaces must support SSL.", "owner": "agent", "evidence": { "level": "documented", "sourceIds": ["s1"] } },
+    { "text": "If you plan to list: a public support page, privacy policy, and a complete listing. Read the Marketplace guidelines before building.", "owner": "agent", "evidence": { "level": "documented", "sourceIds": ["s3", "s6"] } }
+  ],
+  "paths": {
+    "dev": [
+      {
+        "title": "Create the app",
+        "detail": "Create from scratch or from a manifest. A manifest (YAML/JSON) is the fastest way for an agent to pre-fill scopes, redirect URLs and features; you paste it in.",
+        "owner": "either",
+        "effort": "5 min",
+        "consoleLocation": "api.slack.com/apps > Create New App > From a manifest",
+        "values": [
+          { "field": "Manifest: oauth_config.redirect_urls", "value": "https://YOUR_DOMAIN/oauth/callback/slack" },
+          { "field": "Manifest: oauth_config.scopes.bot", "value": "chat:write channels:read (add only what you use)" }
+        ],
+        "evidence": { "level": "documented", "sourceIds": ["s1", "s7"] }
+      },
+      {
+        "title": "Set bot scopes and, if needed, user scopes",
+        "detail": "OAuth & Permissions. Bot scopes act as the app; user scopes act as the installing user. Each scope appears on the consent screen; minimum scopes get fewer admin questions later.",
+        "owner": "agent",
+        "effort": "5 min",
+        "consoleLocation": "OAuth & Permissions > Scopes",
+        "evidence": { "level": "documented", "sourceIds": ["s1"] }
+      },
+      {
+        "title": "Install to your development workspace",
+        "detail": "Install to Workspace runs the OAuth flow for your own workspace and gives you a bot token immediately. This is your dev-ready moment.",
+        "owner": "you",
+        "effort": "2 min",
+        "consoleLocation": "OAuth & Permissions > Install to Workspace",
+        "evidence": { "level": "documented", "sourceIds": ["s1"] }
+      },
+      {
+        "title": "Wire up the OAuth v2 flow for other workspaces",
+        "detail": "Use the shareable install URL or Add to Slack button; exchange the code at oauth.v2.access. Store tokens per workspace (team ID), not per user.",
+        "owner": "agent",
+        "effort": "30 min",
+        "evidence": { "level": "documented", "sourceIds": ["s1"] }
+      }
+    ],
+    "production": [
+      {
+        "title": "Activate public distribution (unlisted)",
+        "detail": "Manage Distribution, complete the checklist (HTTPS everywhere, remove hard-coded tokens), then Activate Public Distribution. You get an Add to Slack button, a shareable install URL and an app-suggestion meta tag. No review. Good for pilots and early customers.",
+        "owner": "you",
+        "effort": "30 min",
+        "consoleLocation": "Manage Distribution > Activate Public Distribution",
+        "evidence": { "level": "documented", "sourceIds": ["s1", "s2"] }
+      },
+      {
+        "title": "Decide: unlisted or Marketplace",
+        "detail": "Slack's policy says apps intended for commercial distribution at scale should be submitted for Marketplace review, and the May 2025 terms call the Marketplace the appropriate channel for commercial distribution. Internal tools and small pilots can stay unlisted.",
+        "owner": "you",
+        "effort": "decision",
+        "evidence": { "level": "documented", "sourceIds": ["s4", "s5"] }
+      },
+      {
+        "title": "Prepare the Marketplace submission",
+        "detail": "Public distribution must already be on. Prepare the listing (descriptions, screenshots, support URL, privacy policy, security recommendations met). The review guide lists what gets a submission returned; read it first.",
+        "owner": "agent",
+        "effort": "1-2 days",
+        "consoleLocation": "Submit to Slack Marketplace > Review and Submit",
+        "evidence": { "level": "documented", "sourceIds": ["s3", "s6"] }
+      },
+      {
+        "title": "Submit and wait for the staged review",
+        "detail": "A preliminary review checks completeness; missing items send it back and reset your queue position. Then a functional review tests the app. Reported durations range from a few weeks to about four months.",
+        "owner": "you",
+        "effort": "2-16 weeks waiting",
+        "evidence": { "level": "reported", "sourceIds": ["s3", "s8"] }
+      }
+    ]
+  },
+  "requirements": [
+    { "item": "HTTPS redirect URL and endpoints", "required": true, "evidence": { "level": "documented", "sourceIds": ["s1"] } },
+    { "item": "Privacy policy and support URL", "required": false, "notes": "Required for a Marketplace listing.", "evidence": { "level": "documented", "sourceIds": ["s3"] } },
+    { "item": "Marketplace listing content (screenshots, descriptions, categories)", "required": false, "evidence": { "level": "documented", "sourceIds": ["s3"] } },
+    { "item": "Compliance with Marketplace guidelines and security recommendations", "required": false, "notes": "Coded workflows are not eligible for listing.", "evidence": { "level": "documented", "sourceIds": ["s6"] } }
+  ],
+  "gotchas": [
+    { "title": "Deactivating distribution removes the app from other workspaces", "detail": "Turning off public distribution uninstalls the app everywhere except the original workspace; once listed, you must discontinue the listing instead.", "evidence": { "level": "documented", "sourceIds": ["s1"] } },
+    { "title": "Review is moment-in-time, not a code review", "detail": "Slack checks guideline compliance and behaviour; significant feature changes need resubmission and periodic audits happen after approval.", "evidence": { "level": "documented", "sourceIds": ["s9"] } },
+    { "title": "Workspace admins may restrict app installs", "detail": "Many customers require admin approval for new apps, so an unlisted app still hits an approval step inside the customer's workspace.", "evidence": { "level": "inferred", "sourceIds": [], "note": "well-known Slack admin behaviour; not in the pages checked for this guide" } }
+  ],
+  "whenStuck": [
+    { "situation": "Submission returned in preliminary review", "action": "Fix every item in the returned list before resubmitting; each resubmission restarts the queue.", "link": "https://docs.slack.dev/slack-marketplace/distributing-your-app-in-the-slack-marketplace", "evidence": { "level": "documented", "sourceIds": ["s3"] } },
+    { "situation": "Not sure if you must list", "action": "Re-read the Dec 2024 policy update: commercial distribution at scale should go through Marketplace review. Internal tools and small pilots can stay unlisted.", "link": "https://docs.slack.dev/changelog/2024/12/10/dev-policy-update", "evidence": { "level": "documented", "sourceIds": ["s4"] } }
+  ],
+  "sources": [
+    { "id": "s1", "url": "https://docs.slack.dev/distribution", "title": "Slack: App distribution", "type": "official", "fetchedAt": "2026-10-28" },
+    { "id": "s2", "url": "https://api.slack.com/distribution", "title": "Slack: Distributing apps (public distribution, Add to Slack button)", "type": "official", "fetchedAt": "2026-10-28" },
+    { "id": "s3", "url": "https://docs.slack.dev/slack-marketplace/distributing-your-app-in-the-slack-marketplace", "title": "Slack: Distributing your app in the Slack Marketplace", "type": "official", "fetchedAt": "2026-10-28" },
+    { "id": "s4", "url": "https://docs.slack.dev/changelog/2024/12/10/dev-policy-update", "title": "Slack changelog: App Developer Policy update (Dec 2024)", "type": "official", "fetchedAt": "2026-10-28" },
+    { "id": "s5", "url": "https://docs.slack.dev/changelog/2025/05/29/tos-updates", "title": "Slack changelog: Terms of Service updates (May 2025)", "type": "official", "fetchedAt": "2026-10-28" },
+    { "id": "s6", "url": "https://docs.slack.dev/slack-marketplace/slack-marketplace-review-guide", "title": "Slack: Marketplace review guide", "type": "official", "fetchedAt": "2026-10-28" },
+    { "id": "s7", "url": "https://docs.slack.dev/app-management/distribution/", "title": "Slack: App lifecycle and distribution", "type": "official", "fetchedAt": "2026-10-28" },
+    { "id": "s8", "url": "https://levelup.gitconnected.com/how-i-published-my-own-app-in-the-slack-marketplace-and-what-the-docs-didnt-tell-me-776e365d0426", "title": "Developer write-up: publishing a Slack Marketplace app (four-month review)", "type": "community", "fetchedAt": "2026-10-28" },
+    { "id": "s9", "url": "https://slack.com/intl/en-ie/blog/developers/slack-marketplace-review-process", "title": "Slack blog: FAQ on the Marketplace review process", "type": "official", "fetchedAt": "2026-10-28" }
+  ],
+  "verification": {
+    "status": "human-verified",
+    "checkedClaims": 19,
+    "corrected": ["First draft said Marketplace listing was purely optional. The Dec 2024 policy update and May 2025 ToS update say commercial distribution at scale should go through Marketplace review, so the production clock was lengthened and the blocker marked hard."],
+    "unverifiable": ["Typical Marketplace review duration (only one developer account found: about four months)", "Workspace admin approval behaviour (inferred)"],
+    "notes": "All official claims come from docs.slack.dev and api.slack.com pages fetched on 2026-10-28. The manifest field names were not re-checked against the manifest reference."
+  },
+  "openQuestions": [
+    "Current median Marketplace review time. Slack publishes no figure; one developer reports four months.",
+    "Whether 'at scale' has a numeric threshold. The policy text does not define it."
+  ]
+}

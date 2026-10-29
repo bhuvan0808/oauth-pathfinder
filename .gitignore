@@ -1,0 +1,13 @@
+node_modules
+.next
+out
+.env
+.env.local
+.env*.local
+*.tsbuildinfo
+next-env.d.ts
+.DS_Store
+
+# agent-generated candidates are reviewed locally, not committed
+data/candidates/*.json
+data/candidates/*.audit.txt

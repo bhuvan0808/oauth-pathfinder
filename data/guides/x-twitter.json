@@ -1,0 +1,139 @@
+{
+  "schemaVersion": 1,
+  "slug": "x-twitter",
+  "app": {
+    "name": "X (Twitter)",
+    "website": "https://developer.x.com",
+    "docsUrl": "https://docs.x.com/x-api/getting-started/",
+    "developerPortalUrl": "https://console.x.com",
+    "category": "Social",
+    "oneLiner": "Setup is fast and there is no app review. The gate is money: new developers are on pay-per-use credits, and there is no free tier for ordinary apps."
+  },
+  "generatedBy": "curated",
+  "generatedAt": "2026-10-28T00:00:00Z",
+  "lastVerifiedAt": "2026-10-28T00:00:00Z",
+  "oauth": {
+    "supportsOAuth": true,
+    "flows": ["pkce", "oauth1", "client_credentials"],
+    "alternatives": ["app_only_bearer_token"],
+    "composioManaged": "unknown",
+    "composioToolkitSlug": "twitter",
+    "dynamicClientRegistration": "unknown",
+    "notes": "OAuth 2.0 Authorization Code with PKCE is the recommended user-context flow; app-only bearer tokens cannot post on a user's behalf. Some newer endpoints are OAuth 2.0 only."
+  },
+  "summary": {
+    "difficulty": 5,
+    "difficultyReason": "No approval queue, but you cannot run a real integration without buying credits: X moved to pay-per-usage with no free tier for normal apps in February 2026, and the legacy Basic plan has since been migrated too. Every user action your agent takes costs money from day one.",
+    "timeToDevReady": { "min": 30, "max": 60, "unit": "minutes", "confidence": "medium", "note": "Includes creating a project/app, enabling user authentication settings and buying initial credits." },
+    "timeToProduction": { "min": 30, "max": 60, "unit": "minutes", "confidence": "medium", "note": "Same as dev-ready; there is no review. Production readiness is a budget question." },
+    "cost": "Pay-per-usage credits bought upfront in the Developer Console; per-endpoint pricing (reported on the order of cents per write and fractions of a cent per read). Enterprise for high volume. Free access only for approved for-good public utility apps.",
+    "blockers": [
+      { "text": "Pay-per-usage pricing: credits must be purchased before API calls succeed; no subscription-free path for typical apps.", "severity": "hard", "evidence": { "level": "documented", "sourceIds": ["s1", "s2"] } },
+      { "text": "Free tier discontinued for new developers (Feb 2026); only for-good public utility apps keep free scaled access, case by case.", "severity": "hard", "evidence": { "level": "reported", "sourceIds": ["s3", "s4"] } },
+      { "text": "Legacy Basic ($200/mo) and Pro ($5,000/mo) plans are closed to new signups and Basic subscribers are being migrated to pay-per-use.", "severity": "soft", "evidence": { "level": "reported", "sourceIds": ["s4", "s5"] } }
+    ],
+    "tldr": "Create a project and app in the X Developer Console, turn on user authentication with OAuth 2.0, set Read and Write permissions and a callback URL, and you can authorize users within the hour. There is no review to wait for, but nothing works until you buy credits: X bills every request. Put the cost model in front of whoever owns the budget before you build."
+  },
+  "prerequisites": [
+    { "text": "An X account and a developer account in the Developer Console.", "owner": "you", "evidence": { "level": "documented", "sourceIds": ["s6"] } },
+    { "text": "A payment method to buy credits (pay-per-usage); decide a spending limit.", "owner": "you", "evidence": { "level": "documented", "sourceIds": ["s1"] } },
+    { "text": "An estimate of monthly reads/writes per user, so the per-request pricing can be turned into a budget.", "owner": "agent", "evidence": { "level": "documented", "sourceIds": ["s1", "s7"] } }
+  ],
+  "paths": {
+    "dev": [
+      {
+        "title": "Sign up in the Developer Console and create a project + app",
+        "detail": "Apps live inside projects. Describe your use case; keep it consistent with the developer policy and restricted-use rules.",
+        "owner": "you",
+        "effort": "10 min",
+        "consoleLocation": "console.x.com > Projects & Apps > Create",
+        "values": [{ "field": "App name", "value": "YOUR_PRODUCT" }],
+        "evidence": { "level": "documented", "sourceIds": ["s6"] }
+      },
+      {
+        "title": "Set up user authentication (OAuth 2.0)",
+        "detail": "In the app's settings, set app permissions to Read and Write (or Read and Write and Direct Messages if needed; changing permission level later forces users to re-authorize), choose OAuth 2.0, and add the callback URL and website URL. Copy the OAuth 2.0 client ID and secret.",
+        "owner": "either",
+        "effort": "10 min",
+        "consoleLocation": "App > Settings > User authentication settings",
+        "values": [
+          { "field": "App permissions", "value": "Read and Write" },
+          { "field": "Type of app", "value": "Web App, Automated App or Bot (confidential client)" },
+          { "field": "Callback URI", "value": "https://YOUR_DOMAIN/oauth/callback/x" },
+          { "field": "Website URL", "value": "https://YOUR_DOMAIN" }
+        ],
+        "evidence": { "level": "reported", "sourceIds": ["s5", "s8"] }
+      },
+      {
+        "title": "Buy credits and set a spending limit",
+        "detail": "Purchase credits in the Developer Console; credits are deducted per request. Without a balance, requests fail.",
+        "owner": "you",
+        "effort": "5 min",
+        "consoleLocation": "Developer Console > Billing / Purchase credits",
+        "evidence": { "level": "documented", "sourceIds": ["s1", "s6"] }
+      },
+      {
+        "title": "Run the PKCE flow and refresh tokens",
+        "detail": "Request scopes such as tweet.read tweet.write users.read offline.access. User access tokens are short-lived (reported two hours); implement refresh or the integration will work in testing and die in production.",
+        "owner": "agent",
+        "effort": "30 min",
+        "values": [{ "field": "Scopes", "value": "tweet.read tweet.write users.read offline.access" }],
+        "evidence": { "level": "reported", "sourceIds": ["s5", "s8"] }
+      }
+    ],
+    "production": [
+      {
+        "title": "Model the bill before launch",
+        "detail": "Per-endpoint pricing differs for reads, writes, search and streams. Estimate calls per user per month, add a margin, and set console spending limits so a runaway agent cannot drain the balance.",
+        "owner": "agent",
+        "effort": "1 hour",
+        "evidence": { "level": "documented", "sourceIds": ["s1", "s7"] }
+      },
+      {
+        "title": "Review compliance rules",
+        "detail": "The developer policy and restricted-use cases apply; automation that looks like spam or scraping can get the app suspended with no refund path.",
+        "owner": "you",
+        "effort": "30 min",
+        "evidence": { "level": "documented", "sourceIds": ["s9"] }
+      }
+    ]
+  },
+  "requirements": [
+    { "item": "Developer account and project", "required": true, "evidence": { "level": "documented", "sourceIds": ["s6"] } },
+    { "item": "Callback and website URLs in user authentication settings", "required": true, "evidence": { "level": "reported", "sourceIds": ["s5"] } },
+    { "item": "Prepaid credits", "required": true, "evidence": { "level": "documented", "sourceIds": ["s1"] } },
+    { "item": "Privacy policy / terms URLs", "required": false, "notes": "Fields exist in app settings; not a gate.", "evidence": { "level": "inferred", "sourceIds": [], "note": "not checked for this guide" } }
+  ],
+  "gotchas": [
+    { "title": "Posting with the app-only bearer token returns 403", "detail": "The bearer token authenticates the app, not a user. Writes need a user-context OAuth 2.0 token.", "evidence": { "level": "reported", "sourceIds": ["s5"] } },
+    { "title": "Short-lived user tokens", "detail": "OAuth 2.0 user tokens expire quickly; without offline.access and refresh handling the integration silently stops.", "evidence": { "level": "reported", "sourceIds": ["s5"] } },
+    { "title": "Pricing is provisional and changes", "detail": "X states current rates live in the Developer Console and on the pricing page and are subject to change; third-party tables go stale fast.", "evidence": { "level": "documented", "sourceIds": ["s7"] } },
+    { "title": "Changing permission level re-prompts users", "detail": "Moving from Read to Read and Write (or adding DMs) requires every user to re-authorize.", "evidence": { "level": "reported", "sourceIds": ["s8"] } }
+  ],
+  "whenStuck": [
+    { "situation": "Calls return 402/403 after setup", "action": "Check credit balance in the Developer Console first; then confirm app permissions and that you are using a user-context token for writes.", "link": "https://console.x.com", "evidence": { "level": "documented", "sourceIds": ["s6", "s5"] } },
+    { "situation": "Need volume beyond pay-per-use caps", "action": "Use the Enterprise interest form on the pricing page; there are no published Enterprise rates.", "link": "https://docs.x.com/x-api/getting-started/pricing", "evidence": { "level": "documented", "sourceIds": ["s1"] } }
+  ],
+  "sources": [
+    { "id": "s1", "url": "https://docs.x.com/x-api/getting-started/pricing", "title": "X Docs: pay-per-usage pricing and credits", "type": "official", "fetchedAt": "2026-10-28" },
+    { "id": "s2", "url": "https://docs.x.com/x-api/fundamentals/post-cap.md", "title": "X Docs: usage and billing (pay-per-usage, per-endpoint)", "type": "official", "fetchedAt": "2026-10-28" },
+    { "id": "s3", "url": "https://www.gigazine.net/gsc_news/en/20260209-x-api-pay-per-use/", "title": "Gigazine: X announces pay-per-use; free access only for for-good public utility apps (quotes @XDevelopers)", "type": "community", "fetchedAt": "2026-10-28" },
+    { "id": "s4", "url": "https://www.postproxy.dev/blog/x-api-pricing-2026/", "title": "PostProxy: X API pricing in 2026 (tiers closed to new signups)", "type": "community", "fetchedAt": "2026-10-28" },
+    { "id": "s5", "url": "https://opentweet.io/how-to/get-x-api-key", "title": "OpenTweet: how to get an X API key (July 2026; Basic migration, OAuth setup, token expiry)", "type": "community", "fetchedAt": "2026-10-28" },
+    { "id": "s6", "url": "https://docs.x.com/fundamentals/developer-portal.md", "title": "X Docs: Developer Console (apps, credentials, credits)", "type": "official", "fetchedAt": "2026-10-28" },
+    { "id": "s7", "url": "https://docs.x.com/x-api/getting-started/", "title": "X Docs: getting started (prices subject to change; see console)", "type": "official", "fetchedAt": "2026-10-28" },
+    { "id": "s8", "url": "https://singhamandeep.com/x-api-direct-messages-scopes/", "title": "Consultant guide: X API scopes vs app permission levels; changing them means re-authorizing every user (2026)", "type": "community", "fetchedAt": "2026-10-30" },
+    { "id": "s9", "url": "https://docs.x.com/developer-terms/ppu-agreement.md", "title": "X Docs: pay-per-use agreement (references developer policy and restricted-use rules)", "type": "official", "fetchedAt": "2026-10-28" }
+  ],
+  "verification": {
+    "status": "human-verified",
+    "checkedClaims": 18,
+    "corrected": ["Draft listed Basic at $200/month as the entry point. Official docs now describe pay-per-usage with no subscriptions and community reports say Basic closed to new signups mid-2026, so the cost model was rewritten and Basic moved to a soft blocker."],
+    "unverifiable": ["Exact per-endpoint prices (official docs point to the console; third-party tables disagree on some rows)", "Console field names for user authentication settings (from community guides, not the official console page)"],
+    "notes": "The gate (pay-per-usage, prepaid credits, no subscriptions) is confirmed on docs.x.com. The 'no free tier' statement is from news coverage quoting the official @XDevelopers announcement, so it is marked reported."
+  },
+  "openQuestions": [
+    "Whether a small free credit or voucher exists for new developers in late 2026 (an earlier $10 voucher was for migrated free-tier users only).",
+    "Whether OAuth 1.0a user-context remains supported for new apps; third parties say yes but X is steering to OAuth 2.0."
+  ]
+}

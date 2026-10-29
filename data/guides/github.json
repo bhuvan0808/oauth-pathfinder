@@ -1,0 +1,127 @@
+{
+  "schemaVersion": 1,
+  "slug": "github",
+  "app": {
+    "name": "GitHub",
+    "website": "https://github.com",
+    "docsUrl": "https://docs.github.com/en/apps",
+    "developerPortalUrl": "https://github.com/settings/developers",
+    "category": "Developer tools",
+    "oneLiner": "Code hosting. Two app types: classic OAuth apps and the newer GitHub Apps, both registered from your account settings."
+  },
+  "generatedBy": "curated",
+  "generatedAt": "2026-10-28T00:00:00Z",
+  "lastVerifiedAt": "2026-10-28T00:00:00Z",
+  "oauth": {
+    "supportsOAuth": true,
+    "flows": ["authorization_code", "device_code"],
+    "alternatives": ["personal_access_token", "github_app_installation_token"],
+    "composioManaged": "unknown",
+    "composioToolkitSlug": "github",
+    "dynamicClientRegistration": "no",
+    "notes": "GitHub recommends GitHub Apps over OAuth apps for new integrations: fine-grained permissions, installation on orgs, short-lived tokens. An OAuth app is still the quickest way to get a user token."
+  },
+  "summary": {
+    "difficulty": 1,
+    "difficultyReason": "Create the app in your settings and it works for every GitHub user immediately. No review unless you want a Marketplace listing.",
+    "timeToDevReady": { "min": 10, "max": 20, "unit": "minutes", "confidence": "high" },
+    "timeToProduction": { "min": 10, "max": 20, "unit": "minutes", "confidence": "high", "note": "Same as dev-ready. A GitHub Marketplace listing is optional and has its own review." },
+    "cost": "Free",
+    "blockers": [],
+    "tldr": "GitHub is the easy case: register an OAuth app (or a GitHub App) from your account settings and any user can authorize it right away. The only gate is optional: listing on GitHub Marketplace, which has requirements and a review."
+  },
+  "prerequisites": [
+    { "text": "A GitHub account. For an app owned by an organization, you need to be an org owner or have been granted app-manager permission.", "owner": "you", "evidence": { "level": "documented", "sourceIds": ["s1", "s2"] } },
+    { "text": "Decide OAuth app vs GitHub App. OAuth app: acts as the user, simplest. GitHub App: installed on repos/orgs, fine-grained permissions, recommended by GitHub for new work.", "owner": "agent", "evidence": { "level": "documented", "sourceIds": ["s3"] } },
+    { "text": "A callback URL on HTTPS (localhost is fine for development).", "owner": "agent", "evidence": { "level": "documented", "sourceIds": ["s1"] } }
+  ],
+  "paths": {
+    "dev": [
+      {
+        "title": "Sign in and open Developer settings",
+        "detail": "Developer settings live under your profile settings. The page redirects to login when signed out, so an agent cannot create the app without your session.",
+        "owner": "you",
+        "effort": "1 min",
+        "consoleLocation": "Settings > Developer settings > OAuth Apps (or GitHub Apps)",
+        "evidence": { "level": "tested", "sourceIds": ["s7"], "note": "Probe: /settings/developers returned 302 to /login" }
+      },
+      {
+        "title": "Register a new OAuth app",
+        "detail": "Fill in the name, homepage URL, description and the authorization callback URL. Only one callback URL per OAuth app; GitHub Apps allow more. Enable device flow only if you need CLI/TV-style login.",
+        "owner": "agent",
+        "effort": "5 min",
+        "consoleLocation": "OAuth Apps > New OAuth App",
+        "values": [
+          { "field": "Application name", "value": "YOUR_PRODUCT (users see this on the consent screen)" },
+          { "field": "Homepage URL", "value": "https://YOUR_DOMAIN" },
+          { "field": "Authorization callback URL", "value": "https://YOUR_DOMAIN/oauth/callback/github" },
+          { "field": "Enable Device Flow", "value": "off unless you need it" }
+        ],
+        "evidence": { "level": "documented", "sourceIds": ["s1"] }
+      },
+      {
+        "title": "Generate a client secret and store both credentials",
+        "detail": "Client ID is public; the client secret is shown once. Put both into your integration (or your Composio custom auth config).",
+        "owner": "you",
+        "effort": "2 min",
+        "consoleLocation": "Your OAuth app > Generate a new client secret",
+        "evidence": { "level": "documented", "sourceIds": ["s1"] }
+      },
+      {
+        "title": "Pick scopes in the authorize URL, not in the app",
+        "detail": "Classic OAuth apps request scopes at authorization time via the scope parameter (e.g. repo, read:user, user:email). Ask for the minimum; users see every scope on the consent screen.",
+        "owner": "agent",
+        "effort": "5 min",
+        "values": [
+          { "field": "Minimal scopes for identity", "value": "read:user user:email" },
+          { "field": "Repo read/write", "value": "repo (broad; prefer a GitHub App with fine-grained permissions if you only need some repos)" }
+        ],
+        "evidence": { "level": "documented", "sourceIds": ["s4"] }
+      },
+      {
+        "title": "Run the authorization code flow once",
+        "detail": "Redirect to https://github.com/login/oauth/authorize, exchange the code at https://github.com/login/oauth/access_token. Tokens from classic OAuth apps do not expire by default.",
+        "owner": "agent",
+        "effort": "10 min",
+        "evidence": { "level": "documented", "sourceIds": ["s4"] }
+      }
+    ],
+    "production": []
+  },
+  "requirements": [
+    { "item": "Homepage URL", "required": true, "evidence": { "level": "documented", "sourceIds": ["s1"] } },
+    { "item": "Authorization callback URL", "required": true, "notes": "One per OAuth app.", "evidence": { "level": "documented", "sourceIds": ["s1"] } },
+    { "item": "Privacy policy and terms", "required": false, "notes": "Not required to register. Required for a Marketplace listing.", "evidence": { "level": "documented", "sourceIds": ["s5"] } },
+    { "item": "GitHub Marketplace listing review", "required": false, "notes": "Only if you want to be listed. Requirements include a verified publisher, a published app in use, and support/privacy documentation.", "evidence": { "level": "documented", "sourceIds": ["s5"] } }
+  ],
+  "gotchas": [
+    { "title": "Organization third-party access restrictions", "detail": "Orgs can restrict which OAuth apps may access their data. If a user belongs to such an org, an org owner must approve your OAuth app before tokens can read org resources. GitHub Apps avoid this because they are installed by the org directly.", "evidence": { "level": "documented", "sourceIds": ["s3"] } },
+    { "title": "One callback URL", "detail": "Classic OAuth apps accept a single callback URL. Use separate apps for local and production, or use a GitHub App which supports multiple callback URLs.", "evidence": { "level": "documented", "sourceIds": ["s1", "s3"] } },
+    { "title": "No OAuth discovery metadata", "detail": "github.com serves no /.well-known/oauth-authorization-server or openid-configuration, so MCP-style dynamic client registration is not available. You must register an app.", "evidence": { "level": "tested", "sourceIds": ["s6"] } },
+    { "title": "Scope creep on the consent screen", "detail": "The repo scope grants read/write to all of a user's repositories. Expect drop-off if that is the first thing users see; fine-grained GitHub App permissions read better.", "evidence": { "level": "documented", "sourceIds": ["s3", "s4"] } }
+  ],
+  "whenStuck": [
+    { "situation": "Users in an org get 403s on org repos", "action": "Ask an org owner to approve your OAuth app under the org's third-party access settings, or migrate to a GitHub App.", "link": "https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/differences-between-github-apps-and-oauth-apps", "evidence": { "level": "documented", "sourceIds": ["s3"] } },
+    { "situation": "You want to be discoverable", "action": "Read the Marketplace listing requirements before building; a listing needs a verified publisher and documentation.", "link": "https://docs.github.com/en/apps/github-marketplace/creating-apps-for-github-marketplace/requirements-for-listing-an-app", "evidence": { "level": "documented", "sourceIds": ["s5"] } }
+  ],
+  "sources": [
+    { "id": "s1", "url": "https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/creating-an-oauth-app", "title": "GitHub Docs: Creating an OAuth app", "type": "official" },
+    { "id": "s2", "url": "https://docs.github.com/en/apps/creating-github-apps/about-creating-github-apps/about-creating-github-apps", "title": "GitHub Docs: About creating GitHub Apps", "type": "official" },
+    { "id": "s3", "url": "https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/differences-between-github-apps-and-oauth-apps", "title": "GitHub Docs: Differences between GitHub Apps and OAuth apps", "type": "official" },
+    { "id": "s4", "url": "https://docs.github.com/en/apps/oauth-apps/building-oauth-apps/authorizing-oauth-apps", "title": "GitHub Docs: Authorizing OAuth apps", "type": "official" },
+    { "id": "s5", "url": "https://docs.github.com/en/apps/github-marketplace/creating-apps-for-github-marketplace/requirements-for-listing-an-app", "title": "GitHub Docs: Requirements for listing an app on GitHub Marketplace", "type": "official" },
+    { "id": "s6", "url": "https://github.com/.well-known/oauth-authorization-server", "title": "Probe: OAuth discovery metadata (HTTP 404, 2026-10-28)", "type": "probe", "fetchedAt": "2026-10-28T14:00:12Z" },
+    { "id": "s7", "url": "https://github.com/settings/developers", "title": "Probe: developer settings reachability (HTTP 302 to /login, 2026-10-28)", "type": "probe", "fetchedAt": "2026-10-28T14:00:12Z" }
+  ],
+  "verification": {
+    "status": "human-verified",
+    "checkedClaims": 16,
+    "corrected": [],
+    "unverifiable": ["Composio managed-auth status was not checked against the Composio API (no key configured when curating); the page checks live when COMPOSIO_API_KEY is set."],
+    "notes": "Two probes were run for real on 2026-10-28 (discovery metadata 404; developer settings redirect to login). Documentation claims reference stable GitHub Docs pages; see VERIFICATION.md for which were fetched versus cited from memory."
+  },
+  "openQuestions": [
+    "GitHub Marketplace review turnaround is not documented; treat any number you see as reported.",
+    "Whether Composio provides a managed OAuth app for GitHub: run the Composio probe or check the managed-auth directory."
+  ]
+}

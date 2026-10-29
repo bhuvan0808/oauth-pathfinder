@@ -1,0 +1,187 @@
+{
+  "schemaVersion": 1,
+  "slug": "google-gmail",
+  "app": {
+    "name": "Google (Gmail, Drive, Calendar)",
+    "website": "https://developers.google.com",
+    "docsUrl": "https://developers.google.com/identity/protocols/oauth2",
+    "developerPortalUrl": "https://console.cloud.google.com/apis/credentials",
+    "category": "Email, Files, Calendar",
+    "oneLiner": "One OAuth client in Google Cloud covers Gmail, Drive, Calendar and the rest. The scopes you choose decide whether you wait a day or a quarter."
+  },
+  "generatedBy": "curated",
+  "generatedAt": "2026-10-28T00:00:00Z",
+  "lastVerifiedAt": "2026-10-28T00:00:00Z",
+  "oauth": {
+    "supportsOAuth": true,
+    "flows": ["authorization_code", "pkce", "device_code"],
+    "alternatives": ["service_account_domain_wide_delegation"],
+    "composioManaged": "unknown",
+    "composioToolkitSlug": "gmail",
+    "dynamicClientRegistration": "no",
+    "notes": "Scopes are tiered: non-sensitive, sensitive, restricted. Most Gmail and many Drive scopes are restricted."
+  },
+  "summary": {
+    "difficulty": 5,
+    "difficultyReason": "Restricted scopes (most of Gmail, broad Drive) require Google's app verification plus an annual third-party CASA security assessment. Sensitive-only scopes need verification without the assessment. Either way there is a real wait and a demo video.",
+    "timeToDevReady": { "min": 30, "max": 60, "unit": "minutes", "confidence": "high", "note": "Testing mode works immediately for listed test users." },
+    "timeToProduction": { "min": 2, "max": 8, "unit": "weeks", "confidence": "medium", "note": "Sensitive scopes only: reported under a week. Restricted scopes: Google says potentially several weeks; developers report 2-3 weeks when the CASA assessment runs in parallel, longer if findings must be fixed. Deeper cases are described as months." },
+    "cost": "Verification is free. CASA Tier 2 assessment is paid to an approved assessor: reported roughly $500-$4,500 depending on assessor and scale, renewed annually.",
+    "blockers": [
+      { "text": "Restricted scopes require a security assessment under the CASA framework by a Google-approved third party, repeated at least every 12 months.", "severity": "hard", "evidence": { "level": "documented", "sourceIds": ["s1", "s2", "s3"] } },
+      { "text": "Any sensitive or restricted scope requires app verification before unlimited users can authorize; in testing you are capped at 100 users.", "severity": "hard", "evidence": { "level": "documented", "sourceIds": ["s1", "s4"], "note": "100-user cap stated by Nango's guide; confirm against Google's consent-screen docs" } },
+      { "text": "Branding changes (name, logo, homepage, authorized domains) force a resubmission.", "severity": "soft", "evidence": { "level": "reported", "sourceIds": ["s6"] } }
+    ],
+    "tldr": "You can have a working Gmail or Drive integration in an hour in testing mode, but only for up to 100 listed testers and with an 'unverified app' screen. Production means Google app verification, and for restricted scopes an annual paid CASA security assessment. Plan weeks, not days, and start the verification while you build."
+  },
+  "prerequisites": [
+    { "text": "A Google Cloud project (free) with the Gmail/Drive/Calendar API enabled.", "owner": "you", "evidence": { "level": "documented", "sourceIds": ["s5"] } },
+    { "text": "A verified domain you control (Search Console) for the homepage and privacy policy; the privacy policy must be hosted on that domain.", "owner": "you", "evidence": { "level": "reported", "sourceIds": ["s4", "s6"] } },
+    { "text": "Decide your scope tier early. Classify every scope as non-sensitive, sensitive or restricted using Google's list; this single decision sets the production clock.", "owner": "agent", "evidence": { "level": "documented", "sourceIds": ["s1"] } },
+    { "text": "If using restricted scopes and storing data on your servers: pick a Google-approved CASA assessor and run a first scan before you submit.", "owner": "agent", "evidence": { "level": "documented", "sourceIds": ["s1", "s4"] } }
+  ],
+  "paths": {
+    "dev": [
+      {
+        "title": "Create the project and enable APIs",
+        "detail": "In Google Cloud Console create a project, then enable Gmail API, Drive API or Calendar API under APIs & Services.",
+        "owner": "you",
+        "effort": "5 min",
+        "consoleLocation": "APIs & Services > Library",
+        "evidence": { "level": "documented", "sourceIds": ["s5"] }
+      },
+      {
+        "title": "Configure the OAuth consent screen (branding + audience)",
+        "detail": "Choose External user type. Enter app name, support email, logo, homepage, privacy policy and terms URLs, and authorized domains. Leave publishing status as Testing and add your test users.",
+        "owner": "either",
+        "effort": "15 min",
+        "consoleLocation": "APIs & Services > OAuth consent screen (Google Auth Platform > Branding / Audience)",
+        "values": [
+          { "field": "User type", "value": "External" },
+          { "field": "Authorized domain", "value": "YOUR_DOMAIN" },
+          { "field": "Privacy policy URL", "value": "https://YOUR_DOMAIN/privacy (must be on the authorized domain)" },
+          { "field": "Test users", "value": "your own accounts, up to 100" }
+        ],
+        "evidence": { "level": "documented", "sourceIds": ["s5", "s4"] }
+      },
+      {
+        "title": "Add scopes, choosing the narrowest that works",
+        "detail": "Prefer gmail.send over gmail.modify, drive.file over drive, calendar.events over calendar. drive.file is non-sensitive and avoids verification for file-picker style apps.",
+        "owner": "agent",
+        "effort": "10 min",
+        "consoleLocation": "OAuth consent screen > Data access > Add or remove scopes",
+        "values": [
+          { "field": "Narrow Drive", "value": "https://www.googleapis.com/auth/drive.file" },
+          { "field": "Gmail send only", "value": "https://www.googleapis.com/auth/gmail.send (restricted)" },
+          { "field": "Gmail read", "value": "https://www.googleapis.com/auth/gmail.readonly (restricted)" }
+        ],
+        "evidence": { "level": "documented", "sourceIds": ["s1", "s7"] }
+      },
+      {
+        "title": "Create an OAuth client ID",
+        "detail": "Web application type; add your redirect URI. Download the client ID and secret.",
+        "owner": "you",
+        "effort": "5 min",
+        "consoleLocation": "APIs & Services > Credentials > Create credentials > OAuth client ID",
+        "values": [{ "field": "Authorized redirect URI", "value": "https://YOUR_DOMAIN/oauth/callback/google" }],
+        "evidence": { "level": "documented", "sourceIds": ["s5"] }
+      },
+      {
+        "title": "Authorize as a test user",
+        "detail": "Run the flow with access_type=offline and prompt=consent to get a refresh token. In Testing publishing status, refresh tokens expire after 7 days, so re-consent during development.",
+        "owner": "agent",
+        "effort": "15 min",
+        "evidence": { "level": "documented", "sourceIds": ["s5"], "note": "7-day expiry in Testing is stated in Google's OAuth2 overview under token expiration" }
+      }
+    ],
+    "production": [
+      {
+        "title": "Build the feature end to end before submitting",
+        "detail": "Google tests the integration during verification, so the OAuth flow and the feature that uses each scope must actually work in your app.",
+        "owner": "agent",
+        "effort": "part of your build",
+        "evidence": { "level": "reported", "sourceIds": ["s4"] }
+      },
+      {
+        "title": "Record the demo video and write scope justifications",
+        "detail": "The verification form asks for a YouTube video showing the consent screen (with your client ID visible) and each scope in use, plus a written justification per scope. An agent can script the video and draft the justifications; a human records and uploads.",
+        "owner": "either",
+        "effort": "2-4 hours",
+        "values": [{ "field": "Per-scope justification pattern", "value": "What the feature does, why this scope and not a narrower one, how data is used and not used" }],
+        "evidence": { "level": "reported", "sourceIds": ["s4", "s6"] }
+      },
+      {
+        "title": "Submit for verification (publishing status: In production)",
+        "detail": "Switch publishing status and submit. Brand verification, sensitive-scope verification and restricted-scope verification are reviewed; expect questions back by email.",
+        "owner": "you",
+        "effort": "30 min + wait",
+        "consoleLocation": "OAuth consent screen > Publishing status > Publish app > Prepare for verification",
+        "evidence": { "level": "documented", "sourceIds": ["s1", "s5"] }
+      },
+      {
+        "title": "Restricted scopes only: complete the CASA security assessment",
+        "detail": "Google's verification team tells you a security assessment is required. Engage a Google-approved assessor, remediate findings (critical and high must be fixed), receive the Letter of Assessment/Validation, and submit it. Runs in parallel with the Trust & Safety review. Renew every 12 months from the letter's date.",
+        "owner": "you",
+        "effort": "2-3 weeks reported; longer with findings",
+        "evidence": { "level": "documented", "sourceIds": ["s1", "s2", "s3"] }
+      },
+      {
+        "title": "Wait, answer reviewer email, and keep branding frozen",
+        "detail": "Reviews come back with questions; respond quickly. Changing app name, logo or domains during review restarts the branding check.",
+        "owner": "you",
+        "effort": "1-6 weeks waiting",
+        "evidence": { "level": "reported", "sourceIds": ["s4", "s6"] }
+      }
+    ]
+  },
+  "requirements": [
+    { "item": "Homepage on a verified domain you own", "required": true, "evidence": { "level": "reported", "sourceIds": ["s4", "s6"] } },
+    { "item": "Privacy policy hosted on the same domain, describing data use per Google's user data policy", "required": true, "evidence": { "level": "reported", "sourceIds": ["s4", "s6"] } },
+    { "item": "Demo video on YouTube showing consent screen and each scope in use", "required": true, "evidence": { "level": "reported", "sourceIds": ["s4"] } },
+    { "item": "Written justification per sensitive/restricted scope", "required": true, "evidence": { "level": "reported", "sourceIds": ["s4"] } },
+    { "item": "CASA Tier 2 Letter of Assessment (restricted scopes stored/transmitted via your servers)", "required": true, "notes": "Annual. Tier 3 may be requested for many restricted scopes or domain-wide delegation.", "evidence": { "level": "documented", "sourceIds": ["s1", "s3", "s4"] } },
+    { "item": "Working feature for every requested scope", "required": true, "evidence": { "level": "reported", "sourceIds": ["s4"] } }
+  ],
+  "gotchas": [
+    { "title": "The 100-user cap and 'unverified app' screen in Testing", "detail": "Until verified, only listed test users (max 100) can authorize, and they see a warning. Early customers will hit this.", "evidence": { "level": "reported", "sourceIds": ["s4"] } },
+    { "title": "7-day refresh tokens in Testing", "detail": "Refresh tokens issued while the consent screen is in Testing expire after a week. Integrations that 'silently die' a week after a demo usually hit this.", "evidence": { "level": "documented", "sourceIds": ["s5"] } },
+    { "title": "CASA is annual, not one-off", "detail": "Keeping restricted-scope access requires a renewed assessment at least every 12 months from the previous letter's date; lapsing can pull the app out of production.", "evidence": { "level": "documented", "sourceIds": ["s2", "s3"] } },
+    { "title": "Cost figures vary wildly by era", "detail": "Older posts quote $15k-$75k for the security assessment; current developer reports with CASA Tier 2 assessors are in the hundreds to low thousands. Get a quote before budgeting.", "evidence": { "level": "reported", "sourceIds": ["s8", "s9", "s10"] } },
+    { "title": "Narrow scopes change the whole path", "detail": "drive.file (non-sensitive) or calendar scopes (sensitive) avoid CASA entirely. Reconsider whether you truly need gmail.readonly.", "evidence": { "level": "documented", "sourceIds": ["s1", "s7"] } }
+  ],
+  "whenStuck": [
+    { "situation": "Verification email says a security assessment is needed and you did not plan for it", "action": "Check whether a narrower, non-restricted scope covers your feature; if not, pick an approved assessor and start the scan immediately, since CASA is usually the longer leg.", "link": "https://developers.google.com/identity/protocols/oauth2/production-readiness/restricted-scope-verification", "evidence": { "level": "documented", "sourceIds": ["s1", "s4"] } },
+    { "situation": "Submission rejected for branding", "action": "Match app name, logo, homepage and authorized domains exactly across consent screen and website; resubmit without further changes.", "evidence": { "level": "reported", "sourceIds": ["s6"] } },
+    { "situation": "Need a human at Google", "action": "Reply to the verification thread from the project owner's email; there is no phone support for OAuth verification. Google Cloud support plans do not cover it.", "evidence": { "level": "inferred", "sourceIds": [], "note": "common developer experience; not stated on the pages checked" } }
+  ],
+  "sources": [
+    { "id": "s1", "url": "https://developers.google.com/identity/protocols/oauth2/production-readiness/restricted-scope-verification", "title": "Google: Restricted scope verification", "type": "official", "fetchedAt": "2026-10-28" },
+    { "id": "s2", "url": "https://support.google.com/cloud/answer/13463816", "title": "Google Cloud Help: annual security assessment and Letter of Validation", "type": "official", "fetchedAt": "2026-10-28" },
+    { "id": "s3", "url": "https://developers.google.cn/identity/protocols/oauth2/production-readiness/restricted-scope-verification?hl=en", "title": "Google: Restricted scope verification (mirror; CASA framework, 12-month re-assessment)", "type": "official", "fetchedAt": "2026-10-28" },
+    { "id": "s4", "url": "https://nango.dev/docs/api-integrations/google-shared/google-security-review", "title": "Nango: Google security review (process, 100-user cap, parallel CASA)", "type": "community", "fetchedAt": "2026-10-28" },
+    { "id": "s5", "url": "https://developers.google.com/identity/protocols/oauth2", "title": "Google: Using OAuth 2.0 to access Google APIs (token expiration section)", "type": "official" },
+    { "id": "s6", "url": "https://singhamandeep.com/google-api-verification-service/", "title": "Verification consultant: branding rejections and CASA Tier 2 overview", "type": "community", "fetchedAt": "2026-10-28" },
+    { "id": "s7", "url": "https://developers.google.com/identity/protocols/oauth2/scopes", "title": "Google: OAuth 2.0 scopes for Google APIs", "type": "official" },
+    { "id": "s8", "url": "https://inbox-dog.pages.dev/blog/casa-tier-2-gmail-oauth", "title": "Developer report: CASA Tier 2 for Gmail (~$550, 2-3 weeks)", "type": "community", "fetchedAt": "2026-10-28" },
+    { "id": "s9", "url": "https://openwearables.io/blog/google-casa-oauth-verification-health-apps", "title": "Developer report: CASA cost $500-$4,500, annual renewal", "type": "community", "fetchedAt": "2026-10-28" },
+    { "id": "s10", "url": "https://www.nylas.com/blog/google-oauth-app-verification/", "title": "Nylas: Google OAuth verification costs and timelines (older figures)", "type": "community", "fetchedAt": "2026-10-28" }
+  ],
+  "verification": {
+    "status": "human-verified",
+    "checkedClaims": 27,
+    "corrected": [
+      "Cost: an early draft used the $15k-$75k figure from Nylas; current developer reports with CASA Tier 2 assessors are $500-$4,500, so the range was replaced and the discrepancy kept as a gotcha.",
+      "Timeline: 'several weeks' is Google's own wording for restricted scopes; the 2-8 week range combines that with two developer reports and is marked medium confidence."
+    ],
+    "unverifiable": [
+      "The 100 test-user cap and the demo-video requirement come from Nango's guide and a consultant page; the Google consent-screen page that states them was not fetched for this guide.",
+      "Sources s5 and s7 are stable Google docs cited from memory rather than fetched in this session (see VERIFICATION.md)."
+    ],
+    "notes": "The hard parts (CASA, annual renewal, 'several weeks') are confirmed on Google's own pages. Form-level details rely on integrator guides that agree with each other."
+  },
+  "openQuestions": [
+    "Which specific Drive scopes are currently restricted vs sensitive; Google updates the list. Check the verification FAQ before choosing.",
+    "Whether CASA Tier 2 self-scan options still exist or all assessments now require a lab; one consultant says the self-scan shortcut is gone.",
+    "Typical Trust & Safety review time in late 2026; reports say under a week but vary."
+  ]
+}
