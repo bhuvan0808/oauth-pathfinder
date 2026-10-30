@@ -1,8 +1,27 @@
+<p align="center">
+  <img src="docs/banner.svg" alt="OAuth Pathfinder" width="100%">
+</p>
+
 # Verification log
 
 What was checked, against what, what changed, and what could not be confirmed. Dates are when the source was read. "Fetched" means the page or its search excerpt was read on that date; "cited from memory" means a stable documentation URL referenced without re-reading it this cycle (the link checker confirms it resolves, not its content).
 
-Evidence levels used throughout: **Tested** = actually attempted · **Documented** = official provider page · **Reported** = community/vendor post · **Inferred** = best reading, no direct source.
+**Evidence levels used throughout:**
+![Tested](https://img.shields.io/badge/Tested-1a7f4b?style=flat-square) actually attempted ·
+![Documented](https://img.shields.io/badge/Documented-0007cd?style=flat-square) official provider page ·
+![Reported](https://img.shields.io/badge/Reported-b7700a?style=flat-square) community or vendor post ·
+![Inferred](https://img.shields.io/badge/Inferred-6b6b6b?style=flat-square) best reading, no direct source
+
+**Result vocabulary in the tables:** **Confirmed** = the source says what the guide says · **Corrected** = the guide was changed to match the source · **Reported only** / **Cited from memory** = left at a lower evidence level on purpose.
+
+| Section | What it covers |
+|---|---|
+| [1. Gating claims](#1-gating-claims-checked-against-official-sources-28-oct-2026) | The claims that decide the production clock in each curated guide, checked against official pages. |
+| [2. Pipeline self-corrections](#2-things-the-pipeline-corrected-on-its-own) | Failure patterns the verify stage is built to catch. |
+| [3. Could not verify](#3-could-not-verify) | What stays "reported" or "unknown" on purpose. |
+| [4. Manual setup attempts](#4-manual-setup-attempts-tested-evidence) | Real attempts with free accounts; the only end-to-end "tested" evidence. |
+| [5. Demo fixtures](#5-demo-fixtures-what-was-and-was-not-verified-30-oct-2026) | What backs the six fixture guides on the deployed demo. |
+| [6. Source URL maintenance](#6-source-url-maintenance-30-oct-2026) | Moved pages and link-checker changes. |
 
 ## 1. Gating claims, checked against official sources (28 Oct 2026)
 
@@ -85,3 +104,33 @@ The verify stage is designed to downgrade and correct. Patterns observed while b
 | Warning text shown to an installer from another site | |
 
 After filling these in, update the corresponding guide's `verification.notes` and change the relevant evidence levels to `tested` with a `probe`-type source pointing at the screenshot or a short note.
+
+## 5. Demo fixtures: what was and was not verified (30 Oct 2026)
+
+The deployed site runs with `MOCK_AGENT=1`. The six fixture guides in `lib/agent/mock.ts` were written by hand to the same prompts and schema the live path uses. This is what backs them:
+
+| Fixture | URLs cited | Page content read this cycle | Basis for the remaining claims | What a live run would change |
+|---|---|---|---|---|
+| Linear | 3, all resolve | None | Prior knowledge of Linear's OAuth docs (settings-based app creation, flat scopes, actor parameter, non-expiring tokens) | Confirms or re-levels each claim; the deliberate broken draft, invented source and fake review step exist only to exercise the retry and audit paths |
+| Notion | 4, all resolve (older `/docs/...` paths redirect to `/guides/...`) | None | Prior knowledge of public-integration requirements (company details, privacy and terms URLs, redirect URIs, page picker at consent) | Token-lifetime question is left open on purpose; a live run should settle it |
+| HubSpot | 6, all resolve (listing page moved; new path used) | None | Prior knowledge of public apps, 30-minute access tokens, scope tiers, and Marketplace listing requirements | The active-install threshold and the review SLA are explicitly marked unknown |
+| Cal.com | 4, all resolve (`/docs/platform` is now `/docs/platform/introduction`) | None | Prior knowledge of Platform OAuth clients and managed users; plan pricing marked Reported | Whether a consent flow exists for existing Cal.com users is the key open question |
+| Mercury | 3, all resolve | **Yes:** `docs.mercury.com/docs/integrations-with-oauth2`. It states that OAuth2 access "requires prior approval" via a request form, that after approval you provide production and development redirect URIs, terms, privacy policy, logo and a GPG public key, that Mercury then securely shares the client ID and secret plus sandbox test-client credentials, and that "approval timelines vary depending on integration complexity" | API-token permission levels from prior knowledge of the getting-started docs | Timeline stays "varies"; the 2–8 week range is an inference and labelled as such |
+| Resend | 4, all resolve | None | Prior knowledge: API keys with full or sending access, domain verification via SPF and DKIM, free-tier caps on the pricing page | Exact free-tier caps are marked unknown because they change |
+
+Everything the generic fallback says is ![Inferred](https://img.shields.io/badge/Inferred-6b6b6b?style=flat-square) and its verification status stays `unverified`.
+
+Probe results inside fixture guides are real: on every generation the pipeline fetches `/.well-known/oauth-authorization-server` and `openid-configuration` on the provider's domain and GETs the developer portal, and records what came back as ![Tested](https://img.shields.io/badge/Tested-1a7f4b?style=flat-square) evidence.
+
+## 6. Source URL maintenance (30 Oct 2026)
+
+`npm run guide:linkcheck` found four failures; all 47 URLs now resolve.
+
+| Guide | Old URL | Status | Action |
+|---|---|---|---|
+| Microsoft | `techcommunity.microsoft.com/t5/microsoft-entra-blog/.../ba-p/1257374` | Moved | URL updated to the new `/blog/microsoft-entra-blog/...-generally-available/1257374` path; same post, claim unchanged. |
+| X | `docs.x.com/es/developer-terms/ppu-agreement.md` | Spanish locale path gone | URL updated to `docs.x.com/developer-terms/ppu-agreement.md` ("X Developer PPU Agreement"); claim unchanged. |
+| X | `singhamandeep.com/?p=1353` | Post removed | Replaced with the same author's current post on X API scopes vs app permission levels, which states that scope changes mean re-authorising every existing user; title updated, level stays Reported. |
+| Google | `support.google.com/cloud/answer/13463816` | Alive ("Annual Recertification") | False positive: the page answers HEAD with 404 and GET with 200. Left as is. |
+
+The link checker now sends browser-like headers and retries with GET on any 4xx, because Google Support and Microsoft Tech Community reject HEAD requests.

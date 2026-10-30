@@ -1,39 +1,47 @@
 # Instructions for Claude Code
 
-This repo is a take-home submission: an OAuth-app readiness guide generator (Next.js 14, App Router, TypeScript, Tailwind, Anthropic SDK with server-side web_search + web_fetch tools). Read README.md first.
+This repo is a take-home submission: an OAuth-app readiness guide generator (Next.js 14, App Router, TypeScript, Tailwind, Anthropic SDK with server-side `web_search` + `web_fetch` tools). Read [README.md](./README.md) first, then [VERIFICATION.md](./VERIFICATION.md).
 
-## Your job in this session
+## Current state (30 Oct 2026)
 
-1. `npm install`, then make `npm run typecheck`, `npm run guide:validate` and `npm run build` pass. They passed at hand-off; if they fail now it is an environment difference, not a design problem. Then run `MOCK_AGENT=1 npm run guide:generate -- Linear` to see the pipeline work without a key (fixtures in `lib/agent/mock.ts`).
-2. With `ANTHROPIC_API_KEY` in `.env.local`, run `npm run dev` and generate guides for at least these inputs, watching `/generate?q=...`:
-   - `Linear` (expect difficulty 1–2, fast)
-   - `HubSpot` (expect a marketplace/app-review path)
-   - `https://cal.com` (URL input)
-   - `Mercury` (ambiguous name; check the resolve stage picks something sensible and says so)
-   - `Resend` (likely API-key only: guide must say no OAuth app exists and still validate)
-   - a tiny or obscure SaaS (expect low-confidence output, lots of "inferred", no crash)
-   Fix any crash or validation loop you see. Typical fixes: the model's JSON shape drift (handle in `lib/agent/pipeline.ts` normalisation block), SSE buffering on the dev server, SDK event names for server tools in `lib/agent/client.ts` (check `stream.on("contentBlock")` still fires for `server_tool_use` / `web_search_tool_result` / `web_fetch_tool_result` blocks in the installed SDK version; if not, read `final.content` after `finalMessage()` and emit activity from there).
-3. `npm run guide:linkcheck` and fix any dead source URL in `data/guides/*.json` by replacing it with the current page (keep the claim; update the URL and title).
-4. Deploy to Vercel (`vercel`), set env vars, confirm `/`, `/guide/google-gmail`, `/api/guides/slack?format=md` and one live generation work on the deployed URL. Note the Hobby 60 s function limit in README if that is what the user is on.
-5. Put the deployed URL and repo URL at the top of README.md.
+- **Deployed:** https://oauth-pathfinder-blue.vercel.app, Vercel project `oauth-pathfinder`, connected to https://github.com/bhuvan0808/oauth-pathfinder so pushes to `main` auto-deploy.
+- **Mode:** `MOCK_AGENT=1` and `GENERATE_RATE_LIMIT=10` are set in production. No `ANTHROPIC_API_KEY` has ever been used; the live-model path is unverified.
+- **Checks that pass:** `npm run typecheck`, `npm run guide:validate`, `npm run build`, `npm run guide:linkcheck` (47 URLs, 0 failing).
+- **Demo fixtures:** `lib/agent/mock.ts` has fixtures for Linear, Notion, HubSpot, Cal.com, Mercury and Resend plus a generic low-confidence fallback. In demo mode `lib/store.ts` rebuilds a missing live guide on a cache miss (fixture delays skipped) so deep links survive serverless cold starts; the generate route opts out of that so fresh requests still stream.
+- **UI:** visual language modelled on composio.dev (tokens in `tailwind.config.ts` and `app/globals.css`). Geist fonts come from the `geist` package; Instrument Serif from `next/font/google`.
+
+## If asked to switch to live research
+
+1. Add the key: `printf '%s' "$ANTHROPIC_API_KEY" | vercel env add ANTHROPIC_API_KEY production`, then `vercel env rm MOCK_AGENT production --yes`, then `vercel --prod`. Locally: put the key in `.env.local` and delete the `MOCK_AGENT` line.
+2. Run `npm run guide:generate -- Linear` first and watch for:
+   - Activity events not appearing: check that `stream.on("contentBlock")` in `lib/agent/client.ts` receives `server_tool_use` / `web_search_tool_result` / `web_fetch_tool_result` blocks with the installed `@anthropic-ai/sdk`. If not, also derive activity and visited URLs from `final.content` after `finalMessage()`.
+   - Tool type names or the beta header being rejected: check the current Anthropic docs for the `web_search` and `web_fetch` tool versions and update `client.ts`.
+   - JSON validation failing twice: improve the normalisation block in `lib/agent/pipeline.ts` or the prompt wording. Do **not** relax the integrity rules in `lib/schema.ts`.
+3. Then generate HubSpot, `https://cal.com`, Mercury, Resend and one obscure SaaS. Candidates land in `data/candidates/` (gitignored); promote with `--promote` only after a human diff.
+4. Add Upstash (`UPSTASH_REDIS_REST_URL` / `_TOKEN`) so live guides survive cold starts, and update the "What was tested" section of the README with real durations and failures.
 
 ## Do not
 
-- Do not rewrite the curated guides' facts, difficulty scores, time ranges or evidence levels in `data/guides/`. They were checked against sources listed in VERIFICATION.md. Fix only broken URLs, typos, or things the user explicitly tells you were wrong in a manual attempt.
-- Do not relax `lib/schema.ts` integrity rules (documented/reported claims must cite a source; "tested" is reserved for real attempts). If the model keeps failing validation, improve the prompt or normalisation, not the rule.
-- Do not change the "Tested / Documented / Reported / Inferred" vocabulary or the two-clocks model; the README and VERIFICATION.md depend on them.
-- Do not commit `.env.local` or any key. `.gitignore` already excludes it.
+- Do not rewrite the curated guides' facts, difficulty scores, time ranges or evidence levels in `data/guides/`. They were checked against the sources listed in VERIFICATION.md. Fix only broken URLs (update URL and title, keep the claim), typos, or things the user explicitly reports from a manual attempt.
+- Do not touch VERIFICATION.md section 4 (manual attempts); the user fills that in.
+- Do not relax `lib/schema.ts` integrity rules (documented and reported claims must cite a source; "tested" is reserved for real attempts). If the model keeps failing validation, improve the prompt or normalisation, not the rule.
+- Do not change the Tested / Documented / Reported / Inferred vocabulary or the two-clocks model; the README, VERIFICATION.md and the UI depend on them.
+- Do not commit `.env.local`, `.vercel/`, `data/candidates/*.json` or any key. `.gitignore` already excludes them. Never put a token in a git remote URL; push with a one-off `http.extraHeader`.
 - Do not add `localStorage` reliance or client-side API keys.
+- Do not present fixture output as live research: every mock guide must keep the `DEMO MODE` prefix in `verification.notes`, which drives the UI banner.
 
 ## Where things are
 
-- Pipeline: `lib/agent/pipeline.ts` (stages, events), `lib/agent/prompts.ts` (all prompts), `lib/agent/probe.ts` (real HTTP checks), `lib/agent/client.ts` (Anthropic calls; model via `ANTHROPIC_MODEL`, default `claude-sonnet-4-5`).
-- SSE route: `app/api/generate/route.ts`. Client: `components/ProgressLog.tsx`.
+- Pipeline: `lib/agent/pipeline.ts` (stages, events), `lib/agent/prompts.ts` (all prompts), `lib/agent/probe.ts` (real HTTP checks), `lib/agent/client.ts` (Anthropic calls; model via `ANTHROPIC_MODEL`, default `claude-sonnet-4-5`), `lib/agent/mock.ts` (demo fixtures).
+- SSE route: `app/api/generate/route.ts` (`maxDuration = 300`). Client: `components/ProgressLog.tsx`.
 - Schema and integrity checks: `lib/schema.ts` (`parseGuide`).
 - Guide rendering: `components/GuideView.tsx`, `components/TwoClocks.tsx`, `components/Badges.tsx`.
 - Markdown export: `lib/markdown.ts`.
-- Storage: `lib/store.ts` (files for curated; Upstash or memory for live).
+- Storage: `lib/store.ts` (files for curated; Upstash or memory for live; demo rebuild on miss).
+- Docs assets: `docs/banner.svg`, `docs/screenshots/`, `docs/attempts/` (manual-attempt screenshots, no secrets).
 
-## If the user asks for more
+## Good next increments, in order of value
 
-Good next increments, in order of value: (1) a Playwright/Browserbase probe that opens the provider's "create app" form and reports the fields it asks for, feeding "tested" evidence; (2) batch generation of 20 more guides via `npm run guide:generate` with a review diff; (3) Upstash Ratelimit instead of the in-memory limiter.
+1. A Playwright or Browserbase probe that opens the provider's "create app" form and reports the fields it asks for, feeding "tested" evidence.
+2. Batch generation of 20 more guides via `npm run guide:generate` with a review diff.
+3. Upstash Ratelimit instead of the in-memory limiter.

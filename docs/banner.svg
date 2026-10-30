@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="320" viewBox="0 0 1200 320" role="img" aria-label="OAuth Pathfinder: will your OAuth app take an hour or a quarter?">
+  <defs>
+    <radialGradient id="glowBlue" cx="12%" cy="10%" r="55%">
+      <stop offset="0%" stop-color="#51a2ff" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#51a2ff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowLime" cx="88%" cy="25%" r="45%">
+      <stop offset="0%" stop-color="#d4ff4a" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#d4ff4a" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="dots" width="22" height="22" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="1" fill="#0f0f0f" fill-opacity="0.12"/>
+    </pattern>
+    <linearGradient id="prod" x1="0" x2="1">
+      <stop offset="0%" stop-color="#51a2ff"/>
+      <stop offset="100%" stop-color="#0007cd"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="320" rx="24" fill="#f6f6f6"/>
+  <rect width="1200" height="320" rx="24" fill="url(#dots)"/>
+  <rect width="1200" height="320" rx="24" fill="url(#glowBlue)"/>
+  <rect width="1200" height="320" rx="24" fill="url(#glowLime)"/>
+  <rect x="0.5" y="0.5" width="1199" height="319" rx="24" fill="none" stroke="#0f0f0f" stroke-opacity="0.1"/>
+
+  <!-- mark -->
+  <rect x="56" y="52" width="40" height="40" rx="11" fill="#0f0f0f"/>
+  <path d="M66 82 L76 72 L66 62" fill="none" stroke="#d4ff4a" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M79 82 L89 72 L79 62" fill="none" stroke="#d4ff4a" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" opacity="0.55"/>
+  <text x="110" y="79" font-family="Geist, Inter, system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="22" font-weight="500" fill="#0f0f0f">OAuth Pathfinder</text>
+
+  <!-- eyebrow -->
+  <text x="56" y="136" font-family="'Geist Mono', 'JetBrains Mono', ui-monospace, Menlo, monospace" font-size="12" letter-spacing="1.6" fill="#6b6b6b">OAUTH APP READINESS · AGENT-GENERATED GUIDES</text>
+
+  <!-- headline -->
+  <text x="56" y="196" font-family="Geist, Inter, system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="50" font-weight="500" letter-spacing="-1.5" fill="#0f0f0f">Will your OAuth app take</text>
+  <rect x="56" y="214" width="214" height="30" rx="4" fill="#d4ff4a"/>
+  <text x="56" y="252" font-family="Geist, Inter, system-ui, -apple-system, 'Segoe UI', sans-serif" font-size="50" font-weight="500" letter-spacing="-1.5" fill="#0f0f0f">an hour <tspan fill="#6b6b6b" font-weight="400">or</tspan> <tspan font-family="'Instrument Serif', Georgia, 'Times New Roman', serif" font-style="italic" font-weight="400" letter-spacing="-0.5">a quarter?</tspan></text>
+
+  <!-- two clocks mini -->
+  <g transform="translate(790 110)">
+    <text x="0" y="0" font-family="'Geist Mono', 'JetBrains Mono', ui-monospace, Menlo, monospace" font-size="11" letter-spacing="1.4" fill="#6b6b6b">TWO CLOCKS</text>
+    <line x1="0" y1="52" x2="340" y2="52" stroke="#0f0f0f" stroke-opacity="0.15"/>
+    <g font-family="'Geist Mono', 'JetBrains Mono', ui-monospace, Menlo, monospace" font-size="10" fill="#6b6b6b">
+      <text x="0" y="74">10 min</text>
+      <text x="62" y="74">1 hr</text>
+      <text x="130" y="74">1 day</text>
+      <text x="196" y="74">1 wk</text>
+      <text x="262" y="74">1 mo</text>
+      <text x="318" y="74">6 mo</text>
+    </g>
+    <rect x="50" y="22" width="38" height="12" rx="6" fill="#1a7f4b"/>
+    <text x="96" y="32" font-family="Geist, Inter, system-ui, sans-serif" font-size="12" fill="#0f0f0f">dev-ready</text>
+    <rect x="236" y="88" width="104" height="12" rx="6" fill="url(#prod)"/>
+    <text x="236" y="118" font-family="Geist, Inter, system-ui, sans-serif" font-size="12" fill="#0f0f0f">production</text>
+  </g>
+
+  <!-- evidence pills -->
+  <g transform="translate(790 262)" font-family="'Geist Mono', 'JetBrains Mono', ui-monospace, Menlo, monospace" font-size="10" letter-spacing="0.8">
+    <circle cx="6" cy="-4" r="4" fill="#1a7f4b"/><text x="16" y="0" fill="#0f0f0f">TESTED</text>
+    <circle cx="86" cy="-4" r="4" fill="#0007cd"/><text x="96" y="0" fill="#0f0f0f">DOCUMENTED</text>
+    <circle cx="198" cy="-4" r="4" fill="#b7700a"/><text x="208" y="0" fill="#0f0f0f">REPORTED</text>
+    <circle cx="290" cy="-4" r="4" fill="#6b6b6b" fill-opacity="0.6"/><text x="300" y="0" fill="#0f0f0f">INFERRED</text>
+  </g>
+</svg>

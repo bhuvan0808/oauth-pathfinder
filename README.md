@@ -1,10 +1,43 @@
-# OAuth Pathfinder
+<p align="center">
+  <img src="docs/banner.svg" alt="OAuth Pathfinder: will your OAuth app take an hour or a quarter?" width="100%">
+</p>
 
-**Live:** https://oauth-pathfinder-blue.vercel.app · **Repo:** https://github.com/bhuvan0808/oauth-pathfinder
+<p align="center">
+  <a href="https://oauth-pathfinder-blue.vercel.app"><img src="https://img.shields.io/badge/live-oauth--pathfinder--blue.vercel.app-51a2ff?style=for-the-badge&labelColor=0f0f0f" alt="Live demo"></a>
+  <a href="https://github.com/bhuvan0808/oauth-pathfinder"><img src="https://img.shields.io/badge/repo-bhuvan0808%2Foauth--pathfinder-f6f6f6?style=for-the-badge&labelColor=0f0f0f" alt="Repository"></a>
+  <img src="https://img.shields.io/badge/mode-demo%20fixtures-d4ff4a?style=for-the-badge&labelColor=0f0f0f" alt="Demo mode">
+</p>
+<p align="center">
+  <img src="https://img.shields.io/badge/Next.js-14-0f0f0f?style=flat-square&logo=nextdotjs&logoColor=white" alt="Next.js 14">
+  <img src="https://img.shields.io/badge/TypeScript-strict-0f0f0f?style=flat-square&logo=typescript&logoColor=51a2ff" alt="TypeScript">
+  <img src="https://img.shields.io/badge/Anthropic-web__search%20%2B%20web__fetch-0f0f0f?style=flat-square" alt="Anthropic server tools">
+  <img src="https://img.shields.io/badge/deployed%20on-Vercel-0f0f0f?style=flat-square&logo=vercel&logoColor=white" alt="Vercel">
+  <img src="https://img.shields.io/badge/license-MIT-0f0f0f?style=flat-square" alt="MIT">
+</p>
+
+**Live:** https://oauth-pathfinder-blue.vercel.app · **Repo:** https://github.com/bhuvan0808/oauth-pathfinder · **Evidence:** [VERIFICATION.md](./VERIFICATION.md) · **For evaluators:** [SUBMISSION.md](./SUBMISSION.md)
 
 Before an AI agent's users can connect an app, the developer usually has to register an OAuth app with the provider and sometimes get it approved. The real question developers ask is not "how do I create the app" but **"will this take an hour or a quarter, and what is going to block me?"** OAuth Pathfinder answers that question per provider: a curated library of readiness guides, plus an agent that investigates any app you name and produces a shareable guide live.
 
 Submitted for the Composio APM Integrations take-home.
+
+> [!IMPORTANT]
+> **The deployed site runs in demo mode.** No Anthropic API key was available at deploy time, so live generation runs on fixture responses for six apps (Linear, Notion, HubSpot, Cal.com, Mercury, Resend) and a deliberately low-confidence generic guide for everything else. The probe stage still makes real HTTP requests. Every generated guide says so with a **Demo mode** badge. The same pipeline switches to real web search and fetch the moment `ANTHROPIC_API_KEY` is set; see [Switching to live research](#switching-the-deployment-to-live-research).
+
+<table>
+  <tr>
+    <td width="50%" valign="top"><img src="docs/screenshots/home.png" alt="Home page: hero, submit box, stats strip, curated library spanning difficulty 1 to 5"><br><sub><b>Home.</b> Submit any app or pick a curated guide. The library spans difficulty 1 (GitHub) to 5 (Google, X).</sub></td>
+    <td width="50%" valign="top"><img src="docs/screenshots/guide.png" alt="Guide page for Google: TL;DR, difficulty, two clocks, blockers, paths with owners and evidence"><br><sub><b>A guide.</b> TL;DR, difficulty, the two clocks on one log-scale bar, blockers, and steps with an owner and evidence badge each.</sub></td>
+  </tr>
+  <tr>
+    <td colspan="2"><img src="docs/screenshots/generate.png" alt="Live generation: stage stepper on the left, terminal-style log of searches, reads and probes on the right"><br><sub><b>Live generation.</b> Five stages streamed over SSE; every search, page read and probe appears as it happens.</sub></td>
+  </tr>
+</table>
+
+<details>
+<summary>Phone layout</summary>
+<p align="center"><img src="docs/screenshots/mobile.png" width="390" alt="Home page at 390px width"></p>
+</details>
 
 ## What a guide gives you
 
@@ -17,49 +50,85 @@ Every guide, curated or live-generated, has the same shape:
 | **Blockers** | Hard (cannot ship without) vs soft (slows you). |
 | **Path 1 / Path 2** | Steps to dev-ready, then steps to production. Each step is labelled **Agent** (research, drafting values, choosing scopes, writing justifications) or **You** (login, terms, payment, business verification, recording a video, clicking submit), with effort, console location and pre-filled values. |
 | **Requirements, gotchas, when stuck** | Privacy policy, verified domain, demo video, assessments; the traps; the escalation path. |
-| **Evidence on every claim** | **Tested** (actually attempted), **Documented** (official docs, linked), **Reported** (community/vendor posts), **Inferred** (the agent's best reading; verify). |
+| **Evidence on every claim** | ![Tested](https://img.shields.io/badge/Tested-1a7f4b?style=flat-square) actually attempted · ![Documented](https://img.shields.io/badge/Documented-0007cd?style=flat-square) official docs, linked · ![Reported](https://img.shields.io/badge/Reported-b7700a?style=flat-square) community or vendor posts · ![Inferred](https://img.shields.io/badge/Inferred-6b6b6b?style=flat-square) the agent's best reading; verify. |
 | **What we could and couldn't verify** | Corrections made during the audit pass, items left as inferred, open questions. |
 
-Guides are shareable by URL, as Markdown (`/api/guides/<slug>?format=md`, paste into Slack/Notion/an agent's context) and as JSON (`/api/guides/<slug>`).
+Guides are shareable by URL, as Markdown (`/api/guides/<slug>?format=md`, paste into Slack, Notion or an agent's context) and as JSON (`/api/guides/<slug>`).
 
-## Setup
+## Quick start
 
 ```bash
-git clone <repo> && cd oauth-pathfinder
+git clone https://github.com/bhuvan0808/oauth-pathfinder.git && cd oauth-pathfinder
 npm install
-cp .env.example .env.local      # add ANTHROPIC_API_KEY (required); COMPOSIO_API_KEY and Upstash are optional
+cp .env.example .env.local      # add ANTHROPIC_API_KEY, or set MOCK_AGENT=1 for demo mode
 npm run dev                     # http://localhost:3000
 ```
 
-No API key yet? Set `MOCK_AGENT=1` in `.env.local` and the pipeline runs on fixture responses. Fixtures exist for Linear, Notion, HubSpot, Cal.com, Mercury and Resend (facts checked against the linked provider pages on 30 Oct 2026, but written by hand, not fetched by a model); any other app gets a deliberately low-confidence generic guide where every claim is "inferred". The Linear fixture includes a broken first draft, an invented source and a wrongly owned step so the retry, source-dropping and audit paths run on every demo. The probe stage still makes real HTTP requests in this mode. Every resulting guide is labelled **Demo mode** in the UI and in `verification.notes`.
+| Command | What it does |
+|---|---|
+| `npm run guide:validate` | Schema and integrity check on every curated guide (run in CI). |
+| `npm run guide:linkcheck` | Fetches every source URL in the curated guides and reports dead links. |
+| `npm run guide:generate -- "Pipedrive"` | CLI generation into `data/candidates/` for review (gitignored). |
+| `npm run guide:generate -- https://cal.com --promote` | Writes straight into `data/guides/`. |
+| `MOCK_AGENT=1 npm run guide:generate -- Linear` | Demo-mode run; watch the retry, source-dropping and audit paths. |
 
-**The deployed site runs in this demo mode** because no Anthropic API key was available at deploy time. To switch it to live research: `vercel env add ANTHROPIC_API_KEY production`, `vercel env rm MOCK_AGENT production`, redeploy.
+> [!TIP]
+> **No API key?** Set `MOCK_AGENT=1` in `.env.local`. Fixtures exist for Linear, Notion, HubSpot, Cal.com, Mercury and Resend (facts checked against the linked provider pages on 30 Oct 2026, written by hand rather than fetched by a model). Any other app gets a deliberately low-confidence guide where every claim is *inferred*. The Linear fixture includes a broken first draft, an invented source and a wrongly owned step so the retry, source-dropping and audit paths run on every demo.
 
-Useful commands:
+### Environment variables
+
+| Variable | Required | Purpose |
+|---|---|---|
+| `ANTHROPIC_API_KEY` | for live research | Resolve, investigate, synthesize and verify calls with server-side `web_search` and `web_fetch`. |
+| `ANTHROPIC_MODEL` | no | Model override; default `claude-sonnet-4-5`. Must support both server tools. |
+| `MOCK_AGENT=1` | no | Fixture responses instead of the model. Set on the deployed demo. |
+| `COMPOSIO_API_KEY` | no | Lets the probe stage ask Composio whether it already provides a managed OAuth app for the toolkit. |
+| `UPSTASH_REDIS_REST_URL` / `_TOKEN` | no | Persistent cache for live-generated guides; otherwise in-memory per instance. |
+| `GENERATE_KEY` | no | Shared secret to gate `/api/generate` on a public deployment. |
+| `GENERATE_RATE_LIMIT` | no | Generations per hour per IP; default 6, set to 10 on the deployment. |
+
+### Switching the deployment to live research
 
 ```bash
-npm run guide:validate          # schema + integrity check on every curated guide (run in CI)
-npm run guide:linkcheck         # HEAD every source URL in the curated guides
-npm run guide:generate -- "Pipedrive"          # CLI: generate into data/candidates/ for review
-npm run guide:generate -- https://cal.com --promote   # write straight into data/guides/
+printf '%s' "$ANTHROPIC_API_KEY" | vercel env add ANTHROPIC_API_KEY production
+vercel env rm MOCK_AGENT production --yes
+vercel --prod
 ```
 
-Deploy: `vercel` from the repo root and add env vars with `vercel env add` (pipe the value in so it never hits your shell history). The `/api/generate` route declares `maxDuration = 300`; Vercel accepted that on the Hobby plan (Fluid Compute allows up to 300 s), so a 1–3 minute live run fits. Without Upstash, live-generated guides are cached in memory per serverless instance; in demo mode a cache miss rebuilds the fixture guide on the fly so links keep working, but with a real key you want Upstash so guides survive cold starts (curated guides are files and always load).
+The `/api/generate` route declares `maxDuration = 300`; Vercel accepted that on the Hobby plan (Fluid Compute allows up to 300 s), so a 1–3 minute live run fits. Without Upstash, live-generated guides are cached in memory per serverless instance. In demo mode a cache miss rebuilds the fixture guide on the fly so links keep working; with a real key you want Upstash so guides survive cold starts. Curated guides are files and always load.
 
 ## How a guide is generated
 
-```
-query ──► resolve ──► investigate (web search + fetch) ──┐
-                 └──► probe (real HTTP checks) ──────────┴──► synthesize ──► verify ──► guide
+```mermaid
+%%{init: {"theme": "base", "themeVariables": {"primaryColor": "#ffffff", "primaryTextColor": "#0f0f0f", "primaryBorderColor": "#d9d9d9", "lineColor": "#6b6b6b", "fontFamily": "Geist, Inter, system-ui, sans-serif", "fontSize": "14px"}}}%%
+flowchart LR
+  Q([app name or URL]) --> R["1 · Resolve<br/>web search"]
+  R --> I["2 · Investigate<br/>search + fetch"]
+  R --> P["3 · Probe<br/>real HTTP checks"]
+  I --> S["4 · Synthesize<br/>guide JSON, zod-validated"]
+  P --> S
+  S --> V["5 · Verify<br/>the skeptic: downgrade, correct, flag"]
+  V --> G([guide · web, Markdown, JSON])
+  style Q fill:#f6f6f6,stroke:#0f0f0f
+  style P fill:#eaf2ff,stroke:#51a2ff
+  style V fill:#fdf3df,stroke:#b7700a
+  style G fill:#d4ff4a,stroke:#0f0f0f
 ```
 
 1. **Resolve.** One model call with web search: canonical name, website, docs, developer console, whether OAuth exists at all. Handles URLs and ambiguous names ("Mercury").
-2. **Investigate.** A model call with Anthropic's server-side `web_search` and `web_fetch` tools answers ten questions (registration, flows, dev-mode limits, production gate, scope tiers, review requirements, timing/cost, blockers, rate limits, oddities). It returns a memo of findings, each with its evidence level and URLs.
+2. **Investigate.** A model call with Anthropic's server-side `web_search` and `web_fetch` tools answers ten questions (registration, flows, dev-mode limits, production gate, scope tiers, review requirements, timing and cost, blockers, rate limits, oddities). It returns a memo of findings, each with its evidence level and URLs.
 3. **Probe.** Deterministic checks that need no account, run in parallel with step 2: `/.well-known/oauth-authorization-server` and `openid-configuration` (is there RFC 8414 metadata, and does it advertise **dynamic client registration**, the MCP-style path where no manual app is needed?); developer-portal reachability (does it redirect to a login wall?); and a Composio API lookup (does Composio already provide a **managed OAuth app**, so the developer can skip all of this?).
 4. **Synthesize.** The memo, probes and the list of URLs the pipeline actually visited go into one call that writes the guide JSON. Output is validated with zod; a failed draft is retried once with the validation errors.
 5. **Verify.** A second model call audits every claim against the memo and the visited-URL list. Anything "documented" without a supporting finding is downgraded to "inferred"; sources with URLs the pipeline never saw are removed; steps that claim an agent can do something requiring login or payment are reassigned to "you". The corrections are shown in the guide, not hidden.
 
-The UI streams each stage and every search/fetch/probe over SSE so you can watch the investigation. A full run takes 1–3 minutes and roughly 12 searches, 8 fetches and 5 model calls.
+The UI streams each stage and every search, fetch and probe over SSE so you can watch the investigation. A full live run takes 1–3 minutes and roughly 12 searches, 8 fetches and 5 model calls. A demo-mode run takes about 8 seconds.
+
+## Evaluate it in three minutes
+
+1. Open the [home page](https://oauth-pathfinder-blue.vercel.app) and read the two-clocks framing; the library spans 1 → 5.
+2. Open [Google (Gmail, Drive, Calendar)](https://oauth-pathfinder-blue.vercel.app/guide/google-gmail): TL;DR, two-clocks bar, hard blockers, Path 2 with owners, evidence badges, and the "could and couldn't verify" section.
+3. Type **Mercury** (ambiguous), **Resend** (API key only) or any app you like, and watch the stages and the search / read / probe log stream. Land on the generated guide; find an *inferred* badge and the corrections list.
+4. Click **Copy as Markdown** and paste it somewhere. Then read [VERIFICATION.md](./VERIFICATION.md) for what was checked against real sources, corrected, and left open.
 
 ## What was tested
 
@@ -78,12 +147,12 @@ Re-run on 30 Oct 2026 after the UI rewrite and deployment.
   | Notion | 2/5 | 15–30 min | 1–2 h | 7 | 7 s | Public integration form; no review before users can connect. |
   | Fathom Analytics (no fixture) | 3/5 | 1–4 h | 1–4 weeks | 0 | 6 s | Generic fallback: low confidence, every claim inferred, status stays `unverified`, no crash. |
 
-- SSE streaming: on `next dev` and on the production deployment, `curl -N` receives events roughly 300 ms apart from the first stage onwards, so the browser log animates live rather than arriving at the end.
-- Production checks on https://oauth-pathfinder-blue.vercel.app: `/` lists the six curated guides; `/guide/google-gmail` renders the two clocks, blockers, both paths and sources; `/api/guides/slack?format=md` returns `text/markdown`; `POST /api/generate {"query":"Linear"}` streams to `done` in about 9 s and `/guide/linear` then loads; `{"query":"Slack"}` returns `{"cached":true,"tier":"library"}` in under a second.
-- Found and fixed on the deployed site: the guide page returned 404 right after a successful generation because the in-memory cache is per serverless instance. In demo mode `getGuide` now rebuilds a missing live guide with the fixture delays skipped (about one second); with a real key the fix is Upstash.
-- Link check: all 47 source URLs in the curated guides resolve. Three had moved (Microsoft Tech Community post, the X pay-per-use agreement, a community X API post) and were updated; Google's support page and the Tech Community post answer HEAD with 4xx but GET with 200, so the checker now retries with GET and browser headers.
-- Layout checked in headless Edge at 1440 px and inside a 390 px frame: the only breakage found (long callback and scope URLs widening the guide grid on phones) was fixed with `min-width: 0` on the grid children.
-- **Not tested against the live model.** No `ANTHROPIC_API_KEY` was available, so the SDK event names for server tools, the `web_fetch` beta header and real-model JSON drift are still unverified. See CLAUDE.md step 2 for that checklist; the fixtures were written to the same prompts and schema the live path uses.
+- **SSE streaming.** On `next dev` and on the production deployment, `curl -N` receives events roughly 300 ms apart from the first stage onwards, so the browser log animates live rather than arriving at the end.
+- **Production checks** on https://oauth-pathfinder-blue.vercel.app: `/` lists the six curated guides; `/guide/google-gmail` renders the two clocks, blockers, both paths and sources; `/api/guides/slack?format=md` returns `text/markdown`; `POST /api/generate {"query":"Linear"}` streams to `done` in about 9 s and `/guide/linear` then loads; `{"query":"Slack"}` returns `{"cached":true,"tier":"library"}` in under a second.
+- **Found and fixed on the deployed site.** The guide page returned 404 right after a successful generation because the in-memory cache is per serverless instance. In demo mode `getGuide` now rebuilds a missing live guide with the fixture delays skipped (about one second); with a real key the fix is Upstash. The generate route's cache check deliberately does not rebuild, so a fresh request still streams the whole run.
+- **Link check.** All 47 source URLs in the curated guides resolve. Three had moved (Microsoft Tech Community post, the X pay-per-use agreement, a community X API post) and were updated; Google's support page and the Tech Community post answer HEAD with 4xx but GET with 200, so the checker now retries with GET and browser headers.
+- **Layout** checked in headless Edge at 1440 px and inside a 390 px frame: the only breakage found (long callback and scope URLs widening the guide grid on phones) was fixed with `min-width: 0` on the grid children.
+- **Not tested against the live model.** No `ANTHROPIC_API_KEY` was available, so the SDK event names for server tools, the `web_fetch` beta header and real-model JSON drift are still unverified. See [CLAUDE.md](./CLAUDE.md) for that checklist; the fixtures were written to the same prompts and schema the live path uses.
 
 ## Key decisions
 
@@ -95,7 +164,7 @@ Re-run on 30 Oct 2026 after the UI rewrite and deployment.
 
 **Verify in a separate pass with a narrower job.** Asking the same call to write and self-audit produces confident prose. The verifier is told it is the skeptic and may only downgrade, correct or flag. Its corrections are surfaced in the guide so readers see the audit trail.
 
-**Pipeline bans invented URLs.** Only URLs returned by search or fetched by the tools can appear as "documented"/"reported" sources. Hallucinated console paths were the single biggest failure in early tests; this rule plus the integrity checker removed almost all of them.
+**Pipeline bans invented URLs.** Only URLs returned by search or fetched by the tools can appear as "documented" or "reported" sources. Hallucinated console paths were the single biggest failure in early tests; this rule plus the integrity checker removed almost all of them.
 
 **Shortcuts first.** If Composio manages the OAuth app, or the provider advertises dynamic client registration, the guide says so at the top. Telling a developer they can skip the whole process is the most useful possible answer.
 
@@ -103,24 +172,26 @@ Re-run on 30 Oct 2026 after the UI rewrite and deployment.
 
 | Guide | Difficulty | Why it is in the set |
 |---|---|---|
-| GitHub | 1 | Baseline: create app, works for everyone, no review. Includes two real probes. |
-| Atlassian (Jira/Confluence) | 3 | Instant sharing with a privacy policy, but an "unreviewed app" warning until Marketplace review. |
-| Slack | 3 | Unlisted distribution is a switch; policy pushes commercial apps into a reported months-long Marketplace review. |
-| Microsoft 365 / Entra | 4 | No review queue at all; the wait is Partner Center company vetting and a verified domain. |
-| Google (Gmail/Drive) | 5 | Restricted scopes: verification plus an annual paid CASA assessment. The canonical "weeks" case. |
-| X (Twitter) | 5 | No review, but gated by money: pay-per-use credits, no free tier for ordinary apps. |
+| GitHub | ![1](https://img.shields.io/badge/1-trivial-1a7f4b?style=flat-square) | Baseline: create app, works for everyone, no review. Includes two real probes. |
+| Atlassian (Jira/Confluence) | ![3](https://img.shields.io/badge/3-moderate-b7700a?style=flat-square) | Instant sharing with a privacy policy, but an "unreviewed app" warning until Marketplace review. |
+| Slack | ![3](https://img.shields.io/badge/3-moderate-b7700a?style=flat-square) | Unlisted distribution is a switch; policy pushes commercial apps into a reported months-long Marketplace review. |
+| Microsoft 365 / Entra | ![4](https://img.shields.io/badge/4-hard-d23b36?style=flat-square) | No review queue at all; the wait is Partner Center company vetting and a verified domain. |
+| Google (Gmail/Drive) | ![5](https://img.shields.io/badge/5-gated-d23b36?style=flat-square) | Restricted scopes: verification plus an annual paid CASA assessment. The canonical "weeks" case. |
+| X (Twitter) | ![5](https://img.shields.io/badge/5-gated-d23b36?style=flat-square) | No review, but gated by money: pay-per-use credits, no free tier for ordinary apps. |
 
 The same pipeline generates the rest: `npm run guide:generate` writes candidates into `data/candidates/` for review, which is how a 100-app library would be built in batches and promoted after a human diff.
 
+**Borrowed Composio's visual language.** The palette (near-white page, white hairline cards, brand blue, lime highlight), mono uppercase labels, pill buttons and the marquee, shimmer and terminal-cursor motion are modelled on composio.dev, since that is who the guides are for.
+
 ## What was checked against real sources
 
-See [VERIFICATION.md](./VERIFICATION.md). Summary: the gating claims in all six curated guides (CASA and its 12-month renewal; Slack's Dec 2024 policy and May 2025 terms; Atlassian's private-by-default and unreviewed warning; Microsoft's MPN requirement and B2C exclusion; X's pay-per-usage model) are confirmed on official pages fetched on 28 Oct 2026. Corrections made along the way are listed there and inside each guide. Form-level details that rely on integrator walkthroughs are labelled "reported", and a few stable doc pages cited from memory are flagged as such.
+See [VERIFICATION.md](./VERIFICATION.md). Summary: the gating claims in all six curated guides (CASA and its 12-month renewal; Slack's Dec 2024 policy and May 2025 terms; Atlassian's private-by-default and unreviewed warning; Microsoft's MPN requirement and B2C exclusion; X's pay-per-usage model) are confirmed on official pages fetched on 28 Oct 2026. Corrections made along the way are listed there and inside each guide. Form-level details that rely on integrator walkthroughs are labelled "reported", and a few stable doc pages cited from memory are flagged as such. Section 5 covers what was and was not verified for the demo fixtures.
 
 ## Limitations
 
 - **The deployed demo is not live research.** `MOCK_AGENT=1` is set on Vercel. Six apps have hand-written fixtures; everything else gets a generic all-inferred guide. The UI says so on every generated guide. Add an Anthropic key to switch the same pipeline to real web search and fetch.
 - **Timing estimates are mostly "reported".** Providers rarely publish review durations. The guides say so and give ranges with confidence levels rather than a single number.
-- **"Tested" is thin.** The pipeline's probes are real but shallow (metadata, portal reachability, Composio status). Actually clicking through a provider's "create app" form needs an account and a browser agent; that was out of scope for the time budget. The two manual setup attempts recorded in VERIFICATION.md are the only end-to-end tests.
+- **"Tested" is thin.** The pipeline's probes are real but shallow (metadata, portal reachability, Composio status). Actually clicking through a provider's "create app" form needs an account and a browser agent; that was out of scope for the time budget. The manual setup attempts in VERIFICATION.md section 4 are the only end-to-end tests.
 - **Policies drift.** X changed its pricing model twice in 2026; Google's restricted-scope list moves. Every guide carries a `lastVerifiedAt` and the pipeline can regenerate on demand (`?force=1`).
 - **Live generation is not human-reviewed.** Agent-verified guides are labelled as such and should be read with the evidence badges in view.
 - **Cost and abuse controls are minimal.** Per-IP rate limiting is in-memory (`GENERATE_RATE_LIMIT=10` per hour on the deployment); `GENERATE_KEY` can gate the endpoint for a public demo. Expect roughly $0.30–$0.80 per live generation depending on how much the model reads.
@@ -130,12 +201,16 @@ See [VERIFICATION.md](./VERIFICATION.md). Summary: the gating claims in all six 
 
 ```
 app/                   Next.js App Router: home, /guide/[slug], /generate, API routes
-components/            GuideView, TwoClocks, Badges, ProgressLog, SubmitBox, LibraryGrid (visual language borrowed from composio.dev)
+components/            GuideView, TwoClocks, Badges, ProgressLog, SubmitBox, LibraryGrid
 lib/schema.ts          Zod schema: the contract for agent output, curated data, UI and export
 lib/agent/             client (Anthropic tools), prompts, probe, pipeline, json, mock (demo fixtures)
-lib/store.ts           Curated library loader + live cache (Upstash or memory)
+lib/store.ts           Curated library loader + live cache (Upstash or memory, demo rebuild on miss)
 lib/markdown.ts        Shareable Markdown export
 data/guides/*.json     Curated, human-verified guides
 scripts/               generate (CLI), validate, linkcheck
+docs/                  banner, screenshots, manual-attempt evidence
 VERIFICATION.md        What was checked, corrected, and could not be verified
+SUBMISSION.md          Evaluator note: links, what to click, what is demo vs real
 ```
+
+<p align="center"><sub>MIT licensed · built with Next.js 14, TypeScript, Tailwind, zod and the Anthropic SDK</sub></p>
