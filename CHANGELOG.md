@@ -2,6 +2,7 @@
 
 ## 30 Oct 2026 · documentation set, more demo apps, agent-facing endpoints
 
+- Roadmap: design note for a "Real test" bring-your-own-key vault (in-memory tab session, server-encrypted expiring token, hardening list).
 - Added demo fixtures for Zoom, Discord, Dropbox, Salesforce and Stripe (eleven apps in total) in `lib/agent/mockFixturesExtra.ts`.
 - Added `GET /api/guides` (index of every guide with summary fields and links) and `GET /api/health` (mode and configuration, no secrets).
 - Added `public/llms.txt`, `AGENTS.md`, `docs/README.md` (index), `docs/EXECUTIVE_SUMMARY.md`, `docs/ARCHITECTURE.md`, `docs/API.md`, `docs/GUIDE_SCHEMA.md`, `docs/guide.schema.json`, `docs/DEPLOYMENT.md`, `docs/TESTING.md`, `docs/DECISIONS.md`, `docs/FAQ.md`, `docs/ROADMAP.md`, this changelog.
