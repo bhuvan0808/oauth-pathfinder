@@ -1,0 +1,167 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://oauth-pathfinder-blue.vercel.app/docs/guide.schema.json",
+  "title": "OAuth Pathfinder guide",
+  "description": "A readiness guide for one provider's OAuth app. Hand-maintained mirror of lib/schema.ts (zod); zod is the source of truth. Integrity rules enforced in code: every evidence.sourceIds entry must exist in sources[]; evidence with level documented, reported or tested must cite at least one source; inferred may have none.",
+  "type": "object",
+  "required": ["schemaVersion", "slug", "app", "generatedBy", "generatedAt", "lastVerifiedAt", "oauth", "summary", "prerequisites", "paths", "requirements", "gotchas", "whenStuck", "sources", "verification", "openQuestions"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "slug": { "type": "string", "pattern": "^[a-z0-9-]+$", "description": "URL slug; derived from the resolved app name." },
+    "app": {
+      "type": "object",
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string" },
+        "website": { "type": "string", "format": "uri" },
+        "docsUrl": { "type": "string", "format": "uri" },
+        "developerPortalUrl": { "type": "string", "format": "uri", "description": "Where an OAuth app is created." },
+        "category": { "type": "string" },
+        "oneLiner": { "type": "string" }
+      }
+    },
+    "generatedBy": { "enum": ["curated", "agent"] },
+    "generatedAt": { "type": "string", "description": "ISO 8601 timestamp." },
+    "lastVerifiedAt": { "type": "string", "description": "ISO 8601 timestamp of the last verification pass or human check." },
+    "oauth": {
+      "type": "object",
+      "required": ["supportsOAuth", "flows", "alternatives", "composioManaged", "dynamicClientRegistration"],
+      "properties": {
+        "supportsOAuth": { "type": "boolean" },
+        "flows": { "type": "array", "items": { "type": "string" }, "description": "e.g. authorization_code, pkce, client_credentials, device_code, oauth1" },
+        "alternatives": { "type": "array", "items": { "type": "string" }, "description": "Other auth methods, e.g. api_key, personal_access_token" },
+        "composioManaged": { "$ref": "#/$defs/triState", "description": "Does Composio provide a managed OAuth app for this toolkit?" },
+        "composioToolkitSlug": { "type": "string" },
+        "dynamicClientRegistration": { "$ref": "#/$defs/triState", "description": "Does the provider advertise RFC 7591 dynamic client registration in its discovery metadata?" },
+        "notes": { "type": "string" }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": ["difficulty", "difficultyReason", "timeToDevReady", "timeToProduction", "cost", "blockers", "tldr"],
+      "properties": {
+        "difficulty": { "type": "integer", "minimum": 1, "maximum": 5, "description": "1 trivial, 2 easy, 3 moderate, 4 hard, 5 gated." },
+        "difficultyReason": { "type": "string" },
+        "timeToDevReady": { "$ref": "#/$defs/duration", "description": "Clock 1: until the developer can get a token for themselves or test users." },
+        "timeToProduction": { "$ref": "#/$defs/duration", "description": "Clock 2: until any user can connect without caps, warnings or admin consent, including approval waits." },
+        "cost": { "type": "string" },
+        "blockers": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["text", "severity", "evidence"],
+            "properties": {
+              "text": { "type": "string" },
+              "severity": { "enum": ["hard", "soft"], "description": "hard = cannot reach production without it; soft = slows you down." },
+              "evidence": { "$ref": "#/$defs/evidence" }
+            }
+          }
+        },
+        "tldr": { "type": "string", "description": "Two or three sentences a developer screenshots for their team." }
+      }
+    },
+    "prerequisites": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["text", "owner", "evidence"],
+        "properties": { "text": { "type": "string" }, "owner": { "$ref": "#/$defs/owner" }, "evidence": { "$ref": "#/$defs/evidence" } }
+      }
+    },
+    "paths": {
+      "type": "object",
+      "required": ["dev", "production"],
+      "properties": {
+        "dev": { "type": "array", "items": { "$ref": "#/$defs/step" }, "description": "Path 1: steps until dev-ready." },
+        "production": { "type": "array", "items": { "$ref": "#/$defs/step" }, "description": "Path 2: steps until production. Empty when the dev path is already production." }
+      }
+    },
+    "requirements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["item", "required", "evidence"],
+        "properties": { "item": { "type": "string" }, "required": { "type": "boolean" }, "notes": { "type": "string" }, "evidence": { "$ref": "#/$defs/evidence" } }
+      }
+    },
+    "gotchas": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["title", "detail", "evidence"],
+        "properties": { "title": { "type": "string" }, "detail": { "type": "string" }, "evidence": { "$ref": "#/$defs/evidence" } }
+      }
+    },
+    "whenStuck": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["situation", "action", "evidence"],
+        "properties": { "situation": { "type": "string" }, "action": { "type": "string" }, "link": { "type": "string", "format": "uri" }, "evidence": { "$ref": "#/$defs/evidence" } }
+      }
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "url", "title", "type"],
+        "properties": {
+          "id": { "type": "string", "description": "Referenced from evidence.sourceIds, e.g. s1, p1." },
+          "url": { "type": "string", "format": "uri" },
+          "title": { "type": "string" },
+          "type": { "enum": ["official", "community", "composio", "probe"], "description": "official = provider docs or console; community = forums, blogs, vendors; composio = Composio docs or API; probe = a live HTTP check the pipeline ran." },
+          "fetchedAt": { "type": "string" }
+        }
+      }
+    },
+    "verification": {
+      "type": "object",
+      "required": ["status", "checkedClaims", "corrected", "unverifiable"],
+      "properties": {
+        "status": { "enum": ["unverified", "agent-verified", "human-verified"] },
+        "checkedClaims": { "type": "integer", "minimum": 0 },
+        "corrected": { "type": "array", "items": { "type": "string" }, "description": "What the audit pass changed." },
+        "unverifiable": { "type": "array", "items": { "type": "string" }, "description": "Items left as inferred because no source supports them." },
+        "notes": { "type": "string", "description": "Free text. Starts with DEMO MODE when produced from fixtures; the UI shows a banner." }
+      }
+    },
+    "openQuestions": { "type": "array", "items": { "type": "string" } }
+  },
+  "$defs": {
+    "triState": { "enum": ["yes", "no", "unknown"] },
+    "owner": { "enum": ["agent", "you", "either"], "description": "agent = research, drafting, scope choice, pre-filled values; you = login, terms, payment, business verification, recording, clicking submit." },
+    "evidence": {
+      "type": "object",
+      "required": ["level"],
+      "properties": {
+        "level": { "enum": ["tested", "documented", "reported", "inferred"] },
+        "sourceIds": { "type": "array", "items": { "type": "string" }, "default": [] },
+        "note": { "type": "string" }
+      }
+    },
+    "duration": {
+      "type": "object",
+      "required": ["min", "max", "unit", "confidence"],
+      "properties": {
+        "min": { "type": "number", "minimum": 0 },
+        "max": { "type": "number", "minimum": 0 },
+        "unit": { "enum": ["minutes", "hours", "days", "weeks", "months"] },
+        "confidence": { "enum": ["high", "medium", "low"] },
+        "note": { "type": "string" }
+      }
+    },
+    "step": {
+      "type": "object",
+      "required": ["title", "detail", "owner", "effort", "evidence"],
+      "properties": {
+        "title": { "type": "string" },
+        "detail": { "type": "string" },
+        "owner": { "$ref": "#/$defs/owner" },
+        "effort": { "type": "string", "description": "Human-readable, e.g. 5 min, 1-2 hours, 1 week waiting." },
+        "consoleLocation": { "type": "string", "description": "Where in the provider console this happens." },
+        "values": { "type": "array", "items": { "type": "object", "required": ["field", "value"], "properties": { "field": { "type": "string" }, "value": { "type": "string" } } }, "description": "Concrete values to enter; pre-filled by the agent where possible." },
+        "evidence": { "$ref": "#/$defs/evidence" }
+      }
+    }
+  }
+}

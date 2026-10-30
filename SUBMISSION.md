@@ -10,7 +10,9 @@
 | **Repo** | https://github.com/bhuvan0808/oauth-pathfinder |
 | **Evidence** | [VERIFICATION.md](./VERIFICATION.md): what was checked, corrected, and could not be verified |
 | **Setup, decisions, limitations** | [README.md](./README.md) |
-| **Mode** | ![Demo mode](https://img.shields.io/badge/demo%20fixtures-no%20API%20key%20at%20deploy%20time-d4ff4a?style=flat-square&labelColor=0f0f0f) |
+| **Everything else** | [docs/README.md](./docs/README.md): executive summary, architecture, API, schema, deployment, testing, decisions, FAQ, roadmap |
+| **For agents** | [AGENTS.md](./AGENTS.md), [/llms.txt](https://oauth-pathfinder-blue.vercel.app/llms.txt), [/api/health](https://oauth-pathfinder-blue.vercel.app/api/health), [/api/guides](https://oauth-pathfinder-blue.vercel.app/api/guides) |
+| **Mode** | ![Demo mode](https://img.shields.io/badge/demo%20fixtures-no%20API%20key%20at%20deploy%20time-d4ff4a?style=flat-square&labelColor=0f0f0f) · the pipeline is built for any app and switches to live research with one env var ([how](./docs/DEPLOYMENT.md#4-switching-the-deployment-to-live-research)) |
 
 ## The one-paragraph version
 
@@ -24,8 +26,9 @@ OAuth Pathfinder answers "hour or quarter?" per provider. Each guide runs on **t
 | 2 | [Google guide](https://oauth-pathfinder-blue.vercel.app/guide/google-gmail) | TL;DR, the two-clocks bar (30–60 min vs 2–8 weeks), two hard blockers, Path 2 with **You** on submit and **Agent** on drafting, evidence badges with source numbers, the "could and couldn't verify" section. |
 | 3 | Type **Mercury** | Ambiguous name: the resolve stage says which Mercury it picked and why; production is an approval form, not a console. |
 | 4 | Type **Resend** | API-key-only provider: the guide says no OAuth app exists and still validates; the production clock is DNS, not approval. |
-| 5 | Type **anything obscure** | Low-confidence shape: every claim *inferred*, status `unverified`, open questions listed. No crash. |
-| 6 | **Copy as Markdown** on any guide | The shareable artifact, with evidence levels and source list intact. |
+| 5 | Type **Zoom** or **Salesforce** | Two opposite shapes: Zoom's Marketplace review gates every external user; Salesforce's connected app is self-serve with a propagation gotcha. Also available: Notion, HubSpot, cal.com, Discord, Dropbox, Stripe. |
+| 6 | Type **anything obscure** | Low-confidence shape: every claim *inferred*, status `unverified`, open questions listed. No crash. |
+| 7 | **Copy as Markdown** on any guide, or open `/api/guides` | The shareable artifact with evidence levels and sources intact; the index an agent would use. |
 
 ## What is real and what is demo on the deployed site
 
@@ -34,9 +37,10 @@ OAuth Pathfinder answers "hour or quarter?" per provider. Each guide runs on **t
 | Six curated guides | Real. Facts checked against official pages on 28 Oct 2026 ([VERIFICATION.md](./VERIFICATION.md) section 1). |
 | Pipeline code (resolve → investigate → probe → synthesize → verify) | Real and unchanged; the deployment runs it with `MOCK_AGENT=1`. |
 | Probes (OAuth discovery metadata, developer-portal reachability, Composio check) | Real HTTP requests on every generation, folded in as *Tested* evidence. |
-| Research text and guide drafts for Linear, Notion, HubSpot, Cal.com, Mercury, Resend | Fixtures written by hand to the same prompts and schema; URLs verified to resolve, one page (Mercury's OAuth2 doc) read in full. See VERIFICATION.md section 5. |
+| Research text and guide drafts for Linear, Notion, HubSpot, Cal.com, Mercury, Resend, Zoom, Discord, Dropbox, Salesforce, Stripe | Fixtures written by hand to the same prompts and schema; every URL verified to resolve, one page (Mercury's OAuth2 doc) read in full. See VERIFICATION.md section 5. |
 | Any other app | Generic low-confidence fixture, all claims *inferred*, labelled as such. |
-| Model calls with `web_search` / `web_fetch` | Not exercised: no Anthropic key was available. Switching is three commands (README, "Switching the deployment to live research"). |
+| Model calls with `web_search` / `web_fetch` | Not exercised: no Anthropic key was available. The code path is complete and provider-agnostic; switching is three commands ([docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)). With a key, any app you type is researched live. |
+| `/api/health`, `/api/guides`, `/llms.txt` | Real; useful to see the mode and to drive the site from an agent. |
 
 ## Where the thinking is
 

@@ -7,7 +7,8 @@ This repo is a take-home submission: an OAuth-app readiness guide generator (Nex
 - **Deployed:** https://oauth-pathfinder-blue.vercel.app, Vercel project `oauth-pathfinder`, connected to https://github.com/bhuvan0808/oauth-pathfinder so pushes to `main` auto-deploy.
 - **Mode:** `MOCK_AGENT=1` and `GENERATE_RATE_LIMIT=10` are set in production. No `ANTHROPIC_API_KEY` has ever been used; the live-model path is unverified.
 - **Checks that pass:** `npm run typecheck`, `npm run guide:validate`, `npm run build`, `npm run guide:linkcheck` (47 URLs, 0 failing).
-- **Demo fixtures:** `lib/agent/mock.ts` has fixtures for Linear, Notion, HubSpot, Cal.com, Mercury and Resend plus a generic low-confidence fallback. In demo mode `lib/store.ts` rebuilds a missing live guide on a cache miss (fixture delays skipped) so deep links survive serverless cold starts; the generate route opts out of that so fresh requests still stream.
+- **Demo fixtures:** `lib/agent/mock.ts` (Linear, Notion, HubSpot, Cal.com, Mercury, Resend) and `lib/agent/mockFixturesExtra.ts` (Zoom, Discord, Dropbox, Salesforce, Stripe) plus a generic low-confidence fallback. In demo mode `lib/store.ts` rebuilds a missing live guide on a cache miss (fixture delays skipped) so deep links survive serverless cold starts; the generate route opts out of that so fresh requests still stream.
+- **Agent-facing surface:** `GET /api/health`, `GET /api/guides`, `public/llms.txt`, `AGENTS.md`, `docs/guide.schema.json`. The documentation set is indexed in `docs/README.md`; keep it in sync when you change behaviour (and add a line to `CHANGELOG.md`).
 - **UI:** visual language modelled on composio.dev (tokens in `tailwind.config.ts` and `app/globals.css`). Geist fonts come from the `geist` package; Instrument Serif from `next/font/google`.
 
 ## If asked to switch to live research
@@ -33,7 +34,7 @@ This repo is a take-home submission: an OAuth-app readiness guide generator (Nex
 ## Where things are
 
 - Pipeline: `lib/agent/pipeline.ts` (stages, events), `lib/agent/prompts.ts` (all prompts), `lib/agent/probe.ts` (real HTTP checks), `lib/agent/client.ts` (Anthropic calls; model via `ANTHROPIC_MODEL`, default `claude-sonnet-4-5`), `lib/agent/mock.ts` (demo fixtures).
-- SSE route: `app/api/generate/route.ts` (`maxDuration = 300`). Client: `components/ProgressLog.tsx`.
+- SSE route: `app/api/generate/route.ts` (`maxDuration = 300`). Client: `components/ProgressLog.tsx`. Read endpoints: `app/api/guides/route.ts`, `app/api/guides/[slug]/route.ts`, `app/api/health/route.ts`.
 - Schema and integrity checks: `lib/schema.ts` (`parseGuide`).
 - Guide rendering: `components/GuideView.tsx`, `components/TwoClocks.tsx`, `components/Badges.tsx`.
 - Markdown export: `lib/markdown.ts`.

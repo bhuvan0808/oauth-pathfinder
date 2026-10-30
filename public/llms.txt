@@ -1,0 +1,65 @@
+# OAuth Pathfinder
+
+> Readiness guides for provider OAuth apps: how hard, how long, what gates approval, and what an AI agent can do for you versus what a human must do. A curated, human-verified library plus an agent pipeline that investigates any app you name and streams a shareable guide.
+
+Live site: https://oauth-pathfinder-blue.vercel.app
+Source: https://github.com/bhuvan0808/oauth-pathfinder
+Submitted for the Composio APM Integrations take-home.
+
+## Mental model
+
+- Two clocks per guide. Dev-ready: time until the developer can get a token for themselves. Production: time until any user can connect without caps, warnings or admin consent, including approval waits.
+- Owners on every step: agent (research, drafting, scope choice, pre-filled values) or you (login, terms, payment, business verification, recording a video, clicking submit).
+- Evidence on every claim: tested (actually attempted), documented (official page, linked), reported (community or vendor post), inferred (best reading; verify).
+- Difficulty 1 to 5: 1 trivial (create app, done), 2 easy, 3 moderate (a distribution or review step), 4 hard (verification with real waiting), 5 gated (paid tier, security assessment, business verification or partner program).
+
+## Deployment mode
+
+This deployment runs in demo mode (MOCK_AGENT=1): live generation uses hand-written fixtures for Linear, Notion, HubSpot, Cal.com, Mercury, Resend, Zoom, Discord, Dropbox, Salesforce and Stripe, and a deliberately low-confidence generic guide for any other app. The probe stage still makes real HTTP requests. Every generated guide is labelled "Demo mode". With ANTHROPIC_API_KEY set and MOCK_AGENT removed, the same pipeline performs live web search and fetch for any app. Check /api/health for the current mode.
+
+## Endpoints
+
+- GET /api/health: mode, configuration flags (no secrets), curated slugs, demo fixture apps, endpoint list.
+- GET /api/guides: index of every guide available (curated + cached live) with summary fields and links.
+- GET /api/guides/{slug}: full guide JSON ({ tier, guide }).
+- GET /api/guides/{slug}?format=md: the guide as Markdown for pasting into Slack, Notion or an agent's context.
+- POST /api/generate with JSON body {"query": "<app name or URL>", "force": false}: Server-Sent Events. Event types: stage, activity (kind: search | fetch | probe | note), result, done (includes the full guide and stats), error. If the guide is already available the response is JSON {"cached": true, "slug": "...", "tier": "library" | "live"} instead of a stream. Rate limited per IP per hour.
+- Pages: / (library and submit box), /guide/{slug}, /generate?q=<query>[&force=1].
+
+## Curated guides (human-verified)
+
+- /guide/github (difficulty 1)
+- /guide/atlassian-jira (3)
+- /guide/slack (3)
+- /guide/microsoft-entra (4)
+- /guide/google-gmail (5)
+- /guide/x-twitter (5)
+
+## Documentation in the repository
+
+- README.md: overview, quick start, environment variables, how a guide is generated, what was tested, key decisions, limitations.
+- SUBMISSION.md: evaluator note: links, what to click, what is demo vs real.
+- VERIFICATION.md: claims checked against official sources, corrections, what could not be verified, manual setup attempts, what backs the demo fixtures, source URL maintenance.
+- AGENTS.md: map of the repository for AI agents and new contributors.
+- docs/EXECUTIVE_SUMMARY.md: the problem, the approach, what is proven, risks, roadmap (manager view).
+- docs/ARCHITECTURE.md: request flow, pipeline stages, event schema, storage tiers, evidence rules, file map.
+- docs/API.md: every endpoint with request and response examples.
+- docs/GUIDE_SCHEMA.md and docs/guide.schema.json: the guide data model and integrity rules.
+- docs/DEPLOYMENT.md: local setup, Vercel deployment, switching to live research, Upstash, cost.
+- docs/TESTING.md: what was tested, how to re-run it, the live-model checklist.
+- docs/DECISIONS.md: design decisions with rationale.
+- docs/FAQ.md: common questions, including what changes once an API key is added.
+- docs/ROADMAP.md: next increments.
+- CHANGELOG.md: what changed when.
+- CLAUDE.md: instructions for coding agents working in this repo.
+
+## Source layout
+
+- app/: Next.js App Router pages and API routes.
+- components/: GuideView, TwoClocks, Badges, ProgressLog, SubmitBox, LibraryGrid, CopyButton.
+- lib/schema.ts: zod schema and integrity checks (parseGuide).
+- lib/agent/: pipeline.ts (stages and events), prompts.ts, probe.ts (real HTTP checks), client.ts (Anthropic calls), json.ts, mock.ts and mockFixturesExtra.ts (demo fixtures).
+- lib/store.ts: curated loader and live cache (Upstash or memory).
+- lib/markdown.ts: Markdown export.
+- data/guides/*.json: curated guides.
+- scripts/: generate (CLI), validate, linkcheck.

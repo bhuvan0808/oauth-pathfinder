@@ -17,6 +17,7 @@
  * (verify path), so the whole error-handling surface is exercised on every demo run.
  */
 import type { ResearchResult, VisitedSource } from "./client";
+import { EXTRA_FIXTURES } from "./mockFixturesExtra";
 
 type Act = { kind: "search" | "fetch" | "text"; detail: string; wait?: number };
 type Ev = { level: "tested" | "documented" | "reported" | "inferred"; sourceIds: string[]; note?: string };
@@ -34,7 +35,7 @@ type Resolved = {
   confidence?: "high" | "medium" | "low";
 };
 
-type Fixture = {
+export type Fixture = {
   key: string;
   aliases: string[];
   resolved: Resolved;
@@ -695,7 +696,10 @@ const resend: Fixture = {
   })
 };
 
-const FIXTURES: Fixture[] = [linear, notion, hubspot, calcom, mercury, resend];
+const FIXTURES: Fixture[] = [linear, notion, hubspot, calcom, mercury, resend, ...EXTRA_FIXTURES];
+
+/** Names of the apps with hand-written demo fixtures, for the UI and the health endpoint. */
+export const DEMO_APPS: string[] = FIXTURES.map((f) => f.resolved.name);
 
 // ---------------------------------------------------------------------------------------------
 // Generic fallback: the honest low-confidence guide a real run produces for an obscure app.

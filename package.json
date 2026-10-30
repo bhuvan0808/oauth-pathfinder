@@ -3,6 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "description": "Readiness guides for provider OAuth apps: how hard, how long, what gates approval, and what an agent can do for you.",
+  "homepage": "https://oauth-pathfinder-blue.vercel.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bhuvan0808/oauth-pathfinder.git"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.17"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",

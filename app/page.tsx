@@ -2,6 +2,7 @@ import Link from "next/link";
 import { loadLibrary, listGeneratedGuides } from "@/lib/store";
 import { LibraryGrid } from "@/components/LibraryGrid";
 import { SubmitBox } from "@/components/SubmitBox";
+import { DEMO_APPS } from "@/lib/agent/mock";
 
 export const dynamic = "force-dynamic";
 
@@ -40,6 +41,8 @@ export default async function Home() {
   const library = loadLibrary().sort((a, b) => a.summary.difficulty - b.summary.difficulty || a.app.name.localeCompare(b.app.name));
   const generated = await listGeneratedGuides();
   const curatedSlugs = new Map(library.map((g) => [g.app.name.toLowerCase(), g.slug]));
+  const demo = process.env.MOCK_AGENT === "1";
+  const demoApps = new Set(DEMO_APPS.map((n) => n.toLowerCase()));
 
   return (
     <div className="space-y-16 sm:space-y-20">
@@ -61,7 +64,7 @@ export default async function Home() {
             must, and every claim carries its evidence.
           </p>
           <div className="fade-up mt-7 max-w-2xl" style={{ ["--d" as string]: "240ms" }}>
-            <SubmitBox examples={["Linear", "HubSpot", "Notion", "cal.com", "Mercury", "Resend"]} />
+            <SubmitBox examples={["Linear", "HubSpot", "Notion", "cal.com", "Mercury", "Resend", "Zoom", "Salesforce"]} />
           </div>
 
           <dl className="fade-up mt-10 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-ink/10 bg-ink/10 sm:grid-cols-4" style={{ ["--d" as string]: "320ms" }}>
@@ -96,6 +99,7 @@ export default async function Home() {
                     <span className="h-1.5 w-1.5 rounded-full bg-brand" />
                     {name}
                     {slug && <span className="mono-xs text-inkSoft">curated</span>}
+                    {!slug && demo && demoApps.has(name.toLowerCase()) && <span className="mono-xs text-inkSoft">demo</span>}
                   </Link>
                 );
               })}
